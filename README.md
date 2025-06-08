@@ -1,4 +1,4 @@
-MERN Bug Tracker </br>
+MERN Bug Tracker <br>
 A full-stack bug tracking application built using the MERN stack (MongoDB, Express, React, Node.js). This project is designed to help teams log, track, and manage software issues throughout the development lifecycle.
 
 Features:
@@ -42,7 +42,7 @@ npm run dev
 
 Project Structure:
 
-/frontend - React + Vite frontend
+/frontend - React + Vite frontend <br>
 /middleware - Express middleware (auth, error handlers)
 /routes - API route definitions
 /schema - MongoDB models or schema logic

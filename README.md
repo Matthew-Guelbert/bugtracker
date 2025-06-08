@@ -20,7 +20,7 @@ Modular, maintainable API design
 Getting Started:
 
 1. Clone the repo:
-git clone https://github.com/your-username/bugtracker.git
+git clone https://github.com/Matthew-Guelbert/bugtracker.git
 cd bugtracker
 
 2. Install backend dependencies:

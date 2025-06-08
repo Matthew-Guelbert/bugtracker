@@ -69,7 +69,7 @@ License:
 This project is licensed under the MIT License.
 
 Author:
-Matthew Guelbert
-Portfolio: https://matthew-guelbert.github.io/
+Matthew Guelbert <br>
+Portfolio: https://matthew-guelbert.github.io/ <br>
 GitHub: https://github.com/Matthew-Guelbert
 

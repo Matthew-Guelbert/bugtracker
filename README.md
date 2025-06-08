@@ -43,14 +43,14 @@ npm run dev
 Project Structure:
 
 /frontend - React + Vite frontend <br>
-/middleware - Express middleware (auth, error handlers)
-/routes - API route definitions
-/schema - MongoDB models or schema logic
-database.js - MongoDB connection logic
-index.js - Express app entry point
-.env - Environment config
-.gitignore
-LICENSE
+/middleware - Express middleware (auth, error handlers) <br>
+/routes - API route definitions <br>
+/schema - MongoDB models or schema logic <br>
+database.js - MongoDB connection logic <br>
+index.js - Express app entry point <br>
+.env - Environment config <br>
+.gitignore <br>
+LICENSE <br>
 README.md
 
 Tech Stack:

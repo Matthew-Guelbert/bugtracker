@@ -267,3 +267,20 @@ async function DeleteUser(id) {
     throw new Error('Error deleting user');
   }
 }
+
+// Bug Functions
+
+// Get All Bugs
+async function GetAllBugs() {
+  debugDb('GetAllBugs endpoint called');
+
+  try {
+    const db = await connectToDatabase();
+    const bugs = await db.collection('Bugs').find({}).toArray();
+    debugDb(`Found ${bugs.length} bugs`);
+    return bugs;
+  } catch (err) {
+    console.error('Error in GetAllBugs:', err.message);
+    throw new Error(`Failed to get bugs: ${err.message}`);
+  }
+};

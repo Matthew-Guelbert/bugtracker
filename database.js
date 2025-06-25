@@ -284,3 +284,231 @@ async function GetAllBugs() {
     throw new Error(`Failed to get bugs: ${err.message}`);
   }
 };
+
+// Get Bug by ID
+async function GetBugById(id) {
+  if (!ObjectId.isValid(id)) {
+    throw new Error('Invalid bug ID format');
+  }
+
+  try {
+    const db = await connectToDatabase();
+    const bug = await db.collection('Bugs').findOne(
+      { _id: new ObjectId(id) }
+    );
+
+    if (!bug) {
+      debugDb(`No bug found with ID: ${id}`);
+      return null;
+    }
+
+    return bug;
+  } catch (error) {
+    debugDb(`Error in GetBugById: ${error.message}`);
+    throw new Error('Error retrieving bug');
+  }
+}
+
+// Create Bug
+async function CreateBug(bug) {
+  try {
+    const db = await connectToDatabase();
+
+    // Add createdOn date if already not present
+    const bugWithMeta = {
+      ...bug,
+      createdOn: bug.createdOn || new Date(),
+    };
+
+    const dbResult = await db.collection('Bugs').insertOne(bugWithMeta);
+
+    debugDb(`Bug created with ID: ${dbResult.insertedId}`);
+    return dbResult;
+  } catch (err) {
+    debugDb(`Error creating bug: ${err.message}`);
+    throw new Error(`Failed to create bug: ${err.message}`);
+  }
+}
+
+// Update Bug
+async function UpdateBug(bugId, update) {
+  const db = await connectToDatabase();
+
+  try {
+    const dbResult = await db.collection('Bugs').updateOne(
+      { _id: new ObjectId(bugId) },
+      { $set: update }
+    );
+
+    debugDb(`Bug updated with ID: ${bugId}, Modified Count: ${dbResult.modifiedCount}`);
+    return dbResult;
+  } catch (err) {
+    debugDb(`Error updating bug: ${err.message}`);
+    throw new Error(`Failed to update bug: ${err.message}`);
+  }
+}
+
+// Close Bug
+async function CloseBug(bugId, updatedFields) {
+  const db = await connectToDatabase();
+
+  try {
+    if (!ObjectId.isValid(bugId)) {
+      throw new Error('Invalid bug ID format');
+    }
+
+    const dbResult = await db.collection('Bugs').updateOne(
+      { _id: new ObjectId(bugId) },
+      { $set: updatedFields }
+    );
+
+    debugDb(`Bug closed with ID: ${bugId}, Modified Count: ${dbResult.modifiedCount}`);
+    return dbResult;
+  } catch (err) {
+    debugDb(`Error closing bug: ${err.message}`);
+    throw new Error(`Failed to close bug: ${err.message}`);
+  }
+}
+
+
+// Comment Functions
+// We'll add the comment and test functions later once things are working.
+
+// Get All Comments for a Bug
+async function GetAllComments() {
+  debugDb('GetAllComments endpoint called');
+
+  try {
+    const db = await connectToDatabase();
+    const comments = await db.collection('Comments').find({}).toArray();
+    debugDb(`Found ${comments.length} comments`);
+    return comments;
+  } catch (err) {
+    console.error('Error in GetAllComments:', err.message);
+    throw new Error(`Failed to get comments: ${err.message}`);
+  }
+}
+
+
+// Universal functions for user.js and bug.js
+
+function getSortOptions(sortBy, type) {
+  const sort = {};
+
+  if (type === 'user') {
+    switch (sortBy) {
+      case 'givenName':
+        sort['givenName'] = 1; // Ascending
+        sort['familyName'] = 1; // Ascending
+        sort['createdOn'] = 1; // Ascending
+        break;
+      case 'familyName':
+        sort['familyName'] = 1; // Ascending
+        sort['givenName'] = 1; // Ascending
+        sort['createdOn'] = 1; // Ascending
+        break;
+      case 'role':
+        sort['role'] = 1; // Ascending
+        sort['givenName'] = 1; // Ascending
+        sort['familyName'] = 1; // Ascending
+        sort['createdOn'] = 1; // Ascending
+        break;
+      case 'newest':
+        sort['createdOn'] = -1; // Descending
+        break;
+      case 'oldest':
+        sort['createdOn'] = 1; // Ascending
+        break;
+      default:
+        sort['givenName'] = 1; // Default sort by givenName ascending
+    }
+  } else if (type === 'bug') {
+    switch (sortBy){
+      case 'title':
+        sort['title'] = 1;
+        sort['createdOn'] = -1;
+        break
+      case 'classification':
+        sort['classification'] = 1;
+        sort['createdOn'] = -1;
+        break;
+      case 'assignedToName':
+        sort['assignedToName'] = 1;
+        sort['createdOn'] = -1;
+        break;
+      case 'createdByName':
+        sort['createdByName'] = 1;
+        sort['createdOn'] = -1;
+        break;
+      case 'newest':
+        sort['createdOn'] = -1; // descending
+        break;
+      case 'oldest':
+        sort['createdOn'] = 1; // ascending
+        break;
+      default:
+        sort['createdOn'] = -1; // default sort
+    }
+  }
+
+  return sort;
+};
+
+async function saveAuditLog(log) {
+  const db = await connectToDatabase();
+  const dbResult = await db.collection('Edits').insertOne(log);
+  debugDb(`Audit log saved with ID: ${dbResult.insertedId}`);
+  return dbResult;
+}
+
+async function hashPassword(password) {
+  try {
+    const saltRounds = parseInt(process.env.SALT_ROUNDS) || 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    debugDb(`Password hashed successfully`);
+    return hashedPassword;
+  } catch (err) {
+    debugDb(`Error hashing password: ${err.message}`);
+    throw new Error(`Failed to hash password: ${err.message}`);
+  }
+}
+
+async function findRoleByName(roleName) {
+  const db = await connectToDatabase();
+  const role = await db.collection('Roles').findOne({ name: roleName });
+
+  if (!role) {
+    debugDb(`Role not found: ${roleName}`);
+    throw new Error(`Role not found: ${roleName}`);
+  }
+
+  debugDb(`Role found: ${role.name}`);
+  return role;
+}
+
+// Exports
+export {
+  connectToDatabase,
+  ping,
+  newId,
+  GetAllUsers,
+  GetUserById,
+  GetUserByEmail,
+  RegisterUser,
+  LoginUser,
+  UpdateUser,
+  DeleteUser,
+  GetAllBugs,
+  GetBugById,
+  CreateBug,
+  UpdateBug,
+  CloseBug,
+  GetAllComments,
+  getSortOptions,
+  saveAuditLog,
+  hashPassword,
+  findRoleByName
+};
+
+// Test DB Connection
+ping();

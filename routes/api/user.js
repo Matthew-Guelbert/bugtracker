@@ -56,7 +56,10 @@ router.post('/login', validBody(loginSchema), async (req, res) => {
       : user.password === password; // plain text password
 
     if (!isPasswordValid) {
-      return.res.status(4010.json({ message: 'Invalid email or password.'}))
+      return res.status(401).json({ message: 'Invalid email or password.'});
     }
+  } catch (error) {
+    debugUser('Error logging in user:', error);
+    return res.status(500).json({ message: 'Internal server error.'});
   }
 })

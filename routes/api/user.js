@@ -63,3 +63,16 @@ router.post('/login', validBody(loginSchema), async (req, res) => {
     return res.status(500).json({ message: 'Internal server error.'});
   }
 })
+
+// Get Current User Info
+router.get('/me', isLoggedIn(), async (req, res) => {
+  const user = await GetUserById(req.user._id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found.'});
+  }
+  const { _id, email, givenName, familyName, role } = user;
+  const name = `${givenName} ${familyName}`; // Combine givenName and familyName
+  return res.status(200).json({ _id, email, givenName, familyName, role, name });
+});
+
+// Update Current User Info

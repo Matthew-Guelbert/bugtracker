@@ -1,8 +1,8 @@
 import Joi from 'joi';
 
-// User Registration Schema
+// user validation
 const userSchema = Joi.object({
-  email: Joi.string().email({ tlds: { allow: false } }).trim().required().messages({
+  email: Joi.string().email().required().messages({
     'string.empty': '"Email" is required.',
     'string.email': '"Email" must be a valid email address.'
   }),
@@ -10,44 +10,57 @@ const userSchema = Joi.object({
     'string.empty': '"Password" is required.',
     'string.min': '"Password" must be at least {#limit} characters long.'
   }),
-  givenName: Joi.string().min(2).trim().required().messages({
+  givenName: Joi.string().min(2).required().messages({
     'string.empty': '"Given Name" is required.',
     'string.min': '"Given Name" must be at least {#limit} characters long.'
   }),
-  familyName: Joi.string().min(2).trim().required().messages({
+  familyName: Joi.string().min(2).required().messages({
     'string.empty': '"Family Name" is required.',
     'string.min': '"Family Name" must be at least {#limit} characters long.'
   }),
-  role: Joi.string().valid(
-    'User', 'Admin', 'Developer', 'Business Analyst', 'Quality Analyst', 'Product Manager', 'Technical Manager'
-  ).default('User')
+  role: Joi.alternatives().try(
+    Joi.string().valid(
+      'User', 'Admin', 'Developer', 'Business Analyst', 'Quality Analyst', 'Product Manager', 'Technical Manager'
+    ),
+    Joi.array().items(
+      Joi.string().valid(
+        'User', 'Admin', 'Developer', 'Business Analyst', 'Quality Analyst', 'Product Manager', 'Technical Manager'
+      )
+    )
+  ).optional() // Allows either a string or an array of valid roles
 });
 
-// Login Schema
+// user login validation
 const loginSchema = Joi.object({
-  email: Joi.string().email({ tlds: { allow: false } }).trim().required().messages({
-    'string.empty': 'Email is required.',
-    'string.email': 'Email must be a valid email address.'
+  email: Joi.string().email().required().messages({
+    'string.empty': '"Email" is required.',
+    'string.email': '"Email" must be a valid email address.'
   }),
-  password: Joi.string().min(6).required().messages({
-    'string.empty': 'Password is required.',
-    'string.min': 'Password must be at least {#limit} characters long.'
+  password: Joi.string().required().messages({
+    'any.required': '"Password" is required.',
   })
 });
 
-// User Update Schema
+// user update validation
 const userUpdateSchema = Joi.object({
-  email: Joi.string().email({ tlds: { allow: false } }).trim().optional(),
-  password: Joi.string().min(6).optional(),
-  givenName: Joi.string().min(2).trim().optional(),
-  familyName: Joi.string().min(2).trim().optional(),
-  role: Joi.string().valid(
-  'User', 'Admin', 'Developer', 'Business Analyst', 'Quality Analyst', 'Product Manager', 'Technical Manager'
-).optional()
-
+  email: Joi.string().email().optional(),
+  password: Joi.string().min(6).optional(), // Adjust minimum length as needed
+  givenName: Joi.string().allow('', null).optional(), //testing different options
+  familyName: Joi.string().allow('', null).optional(),
+  role: Joi.alternatives().try(
+    Joi.string().valid(
+      'User', 'Admin', 'Developer', 'Business Analyst', 'Quality Analyst', 'Product Manager', 'Technical Manager'
+    ),
+    Joi.array().items(
+      Joi.string().valid(
+        'User', 'Admin', 'Developer', 'Business Analyst', 'Quality Analyst', 'Product Manager', 'Technical Manager'
+      )
+    )
+  ).optional() // Allows either a string or an array of valid roles
 });
 
-// ObjectId Schema (e.g., for userId or any Mongo _id)
+// userId validation
 const userIdSchema = Joi.string().length(24).hex().required();
+
 
 export { userSchema, loginSchema, userUpdateSchema, userIdSchema };

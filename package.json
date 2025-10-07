@@ -1,29 +1,35 @@
 {
-  "name": "bugtracker",
+  "name": "finalproject",
   "version": "1.0.0",
+  "description": "Issue Tracker for tracking software bugs during software development life cycle.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon -r dotenv/config index.js"
+    "start-dev": "nodemon -r dotenv/config index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": [
+    "Issue",
+    "Tracker",
+    "Matthew",
+    "Guelbert"
+  ],
+  "author": "Matthew Guelbert",
+  "license": "MIT",
   "dependencies": {
     "@merlin4/express-auth": "^0.0.5",
-    "bcrypt": "^6.0.0",
+    "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "debug": "^4.4.1",
-    "dotenv": "^16.5.0",
-    "express": "^4.21.2",
+    "debug": "^4.3.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.17.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
+    "mongodb": "^6.9.0",
+    "nanoid": "^5.0.7",
+    "nanoid-dictionary": "^4.3.0",
+    "nodemon": "^3.1.4"
   }
 }

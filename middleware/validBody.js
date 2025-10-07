@@ -2,27 +2,18 @@ import Joi from 'joi';
 
 export const validBody = (schema) => {
   return (req, res, next) => {
-    console.log("[Validation] Incoming body:", req.body);
-
-    const { error, value } = schema.validate(req.body, {
-      abortEarly: false,
-      stripUnknown: true, // Remove fields not in schema
-    });
+    console.log("Incoming body data:", req.body);  // Check the incoming data structure
+    const { error } = schema.validate(req.body, { abortEarly: false });
 
     if (error) {
       const messages = error.details.map(err => ({
         message: err.message,
-        path: err.path,
-        type: err.type,
+        path: err.path,  // Show specific path Joi flagged
+        type: err.type,  // Show error type (optional but useful for debugging)
       }));
-
-      console.warn("[Validation] Joi errors:", messages);
-      return res.status(400).json({ errors: messages });
+      console.error("Joi validation errors:", messages);  // Detailed error logging
+      return res.status(400).json({ error: messages });
     }
-
-    req.body = value; // Sanitize and apply stripped version of the body
     next();
   };
 };
-
-export default validBody;

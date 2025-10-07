@@ -3,112 +3,80 @@ dotenv.config();
 import bcrypt from 'bcrypt';
 
 import { MongoClient, ObjectId } from 'mongodb';
-import { connectToDatabase } from './database.js';
 import debug from 'debug';
-const debugDb = debug('app:database');
+const debugDb = debug('app:Database');
 
-// Generate/Parse an ObjectId from a string
-const newId = (str) => {
-  if (!str || typeof str !== 'string' || !ObjectId.isValid(str)) {
-    throw new Error('Invalid ObjectId string');
-  }
-  return new ObjectId(str);
-};
+/** Generate/Parse an ObjectId */
+const newId = (str) => new ObjectId(str);
 
-// Global variable storing the db connection, do not use this directly
+/** Global variable storing the open connection, do not use it directly */
 let _db = null;
 
-// Connect to the database
-async function connectToDatabase() {
-  if (!_db) {
+/** Connect to the database */
+async function connect(){
+  if (!_db){
     const dbUrl = process.env.DB_URL;
     const dbName = process.env.DB_NAME;
-
-    if (!dbUrl) {
-      throw new Error('DB_URL is not defined in environment variables');
-    }
-    if (!dbName) {
-      throw new Error('DB_NAME is not defined in environment variables');
-    }
-
-    try {
-      const client = await MongoClient.connect(dbUrl, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      _db = client.db(dbName);
-      debugDb(`Connected to database: ${dbName}`);
-    } catch (err) {
-      debugDb(`Error connecting to database: ${err.message}`);
-      throw err;
-    }
+    const client = await MongoClient.connect(dbUrl);
+    _db = client.db(dbName);
+    debugDb('Connected to database.');
   }
   return _db;
 }
 
-
-// Connect to the db and verify the connection
-async function ping() {
-  try {
-    const db = await connectToDatabase();
-    const pong = await db.command({ ping: 1 });
-    debugDb(`Ping response: ${JSON.stringify(pong)}`);
-  } catch (err) {
-    debugDb(`Ping failed: ${err.message}`);
-    throw err;
-  }
+/** Connect to the database and verify the connection */
+// possibly comment out when deploying to gcloud
+async function ping(){
+  const db = await connect();
+  const pong = await db.command({ping: 1});
+  debugDb(`Pinging server: ${JSON.stringify(pong)}`);
 }
 
-/* Functions */
+/** FUNCTIONS **/
 
-/* User Functions */
-
-// Get All Users
+// User functions
+// Updated GetAllUsers function to handle query, pagination, sorting, and matching
 async function GetAllUsers({ keywords, role, maxAge, minAge, sortBy, pageSize = 5, pageNumber = 1 }) {
-  debugDb('GetAllUsers called with:', { keywords, role, maxAge, minAge, sortBy, pageSize, pageNumber });
+  debugDb('GetAllUsers');
 
   try {
-    const db = await connectToDatabase();
+    const db = await connect();
     const match = {};
-    const sortOptions = getSortOptions(sortBy, 'user');
+    const sortOptions = getSortOptions(sortBy, 'user');  // Use your existing helper to get sorting options
 
     // Keywords search (partial text search)
     if (keywords) {
       match.$or = [
-        { givenName: { $regex: keywords, $options: 'i' } },
-        { familyName: { $regex: keywords, $options: 'i' } },
-        { email: { $regex: keywords, $options: 'i' } }
+        { givenName: { $regex: keywords, $options: 'i' } },  // Search givenName
+        { familyName: { $regex: keywords, $options: 'i' } },  // Search familyName
+        { email: { $regex: keywords, $options: 'i' } }         // Search email
       ];
     }
 
-    // Role filter
+    // Role search
     if (role) {
-      match.role = role;
+      match.role = role;  // Filter by user role
     }
 
-    // Age filter
+    // Age filter (maxAge and minAge)
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    today.setHours(0, 0, 0, 0);  // Reset time to midnight
 
-    const createdOnFilter = {};
+    const pastMaximumDaysOld = new Date(today);
+    pastMaximumDaysOld.setDate(pastMaximumDaysOld.getDate() - maxAge);
 
-    if (typeof minAge === 'number' && minAge > 0) {
-      const minCreatedDate = new Date(today);
-      minCreatedDate.setDate(minCreatedDate.getDate() - minAge);
-      createdOnFilter.$lte = minCreatedDate; // Created within the last minAge days
+    const pastMinimumDaysOld = new Date(today);
+    pastMinimumDaysOld.setDate(pastMinimumDaysOld.getDate() - minAge);
+
+    if (maxAge && minAge) {
+      match.createdOn = { $lte: pastMinimumDaysOld, $gte: pastMaximumDaysOld }; // Between minAge and maxAge
+    } else if (minAge) {
+      match.createdOn = { $lte: pastMinimumDaysOld }; // Only users created within minAge days
+    } else if (maxAge) {
+      match.createdOn = { $gte: pastMaximumDaysOld }; // Only users created within maxAge days
     }
 
-    if (typeof maxAge === 'number' && maxAge > 0) {
-      const maxCreatedDate = new Date(today);
-      maxCreatedDate.setDate(maxCreatedDate.getDate() - maxAge);
-      createdOnFilter.$gte = maxCreatedDate; // Created at least maxAge days ago
-    }
-
-    if (Object.keys(createdOnFilter).length > 0) {
-      match.createdOn = createdOnFilter;
-    }
-
-    // Pagination
+    // Pagination setup
     pageNumber = parseInt(pageNumber) || 1;
     pageSize = parseInt(pageSize) || 5;
     const skip = (pageNumber - 1) * pageSize;
@@ -123,12 +91,12 @@ async function GetAllUsers({ keywords, role, maxAge, minAge, sortBy, pageSize = 
 
     const cursor = db.collection('Users').aggregate(pipeline);
     const users = await cursor.toArray();
-
+    
     users.forEach(user => {
-      console.log(`User: ${user.givenName} ${user.familyName}, Email: ${user.email}, Role: ${user.role}`);
+      console.log(user.roles);
     })
 
-    // Count total users matching the criteria
+    // Count the total number of users that match the search criteria
     const totalUsers = await db.collection('Users').countDocuments(match);
     const totalPages = Math.ceil(totalUsers / pageSize);
 
@@ -137,292 +105,380 @@ async function GetAllUsers({ keywords, role, maxAge, minAge, sortBy, pageSize = 
       users,
       totalUsers,
       totalPages,
-      pageNumber,
-      pageSize
+      currentPage: pageNumber,
+      pageSize: pageSize
     };
-  } catch (err) {
-    debugDb(`Error in GetAllUsers: ${err.message}`);
-    throw new Error(`Failed to get users: ${err.message}`);
+  
+  } catch (error) {
+    console.error(`Error in GetAllUsers: ${error.message}`);
+    throw new Error('Error retrieving users');
   }
 }
 
-// Get User by ID
-async function GetUserById(id) {
-  debugDb(`GetUserById called with ID: ${id}`);
 
-  if (!ObjectId.isValid(id)) {
-    throw new Error('Invalid ObjectId format');
+async function GetUserById(id){
+  const db = await connect();
+
+  if (!ObjectId.isValid(id)){
+    return null;
   }
-
-  const db = await connectToDatabase();
-  const objectId = new ObjectId(id);
 
   try {
     const user = await db.collection('Users').findOne(
-      { _id: objectId },
-      { projection: { password: 0 } }
+      { _id: new ObjectId(id) },
+      { projection: { password: 0 } } // Exclude password field
     );
-
-    return user || null;
-  } catch (err) {
-    debugDb(`Error in GetUserById: ${err.message}`);
-    throw new Error(`Failed to get user by ID: ${err.message}`);
-  }
-}
-
-// Get User by Email
-async function GetUserByEmail(email) {
-  const db = await connectToDatabase();
-
-  try {
-    const cleanEmail = email.trim().toLowerCase();
-    const user = await db.collection('Users').findOne({ email: cleanEmail });
     return user;
-  } catch (err) {
-    console.error(`Error in GetUserByEmail: ${err.message}`);
-    throw new Error(`Failed to get user by email: ${err.message}`);
+
+  } catch(error){
+    console.error(`Error in GetUserById: ${error.message}`);
+    throw new Error('Error retrieving user');
   }
 }
 
-// Register User
+async function GetUserByEmail(email){
+  const db = await connect();
+
+  try{
+    const user = await db.collection("Users").findOne({ email: email });
+    return user;
+  }catch(error){
+    console.error(`Error in GetUserByEmail: ${error.message}`);
+    throw new Error('Error retrieving user');
+  }
+}
+
 async function RegisterUser(user) {
-  const db = await connectToDatabase();
+  try{
+    const db = await connect();
 
-  try {
-    // Check if user with the same email already exists
-    const existingUser = await db.collection('Users').findOne({ email: user.email });
-
+    // Check if a user with the same email already exists
+    const existingUser = await db.collection("Users").findOne({ email: user.email });
+  
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      // If the email is already in use, throw an error
+      throw new Error('Email already registered');
     }
 
-    // Assign new ID and creation date
-    const newUser = {
-      ...user,
-      _id: new ObjectId(),
-      createdOn: new Date(),
-    };
+    // Generate a new ObjectId for the user and add creation date
+    user._id = new ObjectId();
 
-    debugDb(`User registered: ID=${newUser._id}, Email=${newUser.email}, Date=${newUser.createdOn.toISOString()}`);
+    // Insert the new user into the database
+    const dbResult = await db.collection("Users").insertOne({
+      ...user, // Spread the user object
+      createdOn: new Date() // Add createdOn field
+    });
 
-    return resourceLimits;
-  } catch (err) {
-    debugDb(`Error in RegisterUser: ${err.message}`);
-    throw new Error(`Failed to register user: ${err.message}`);
-  }
-}
+    // debug message
+    const userId = user._id;
+    const currentDate = new Date().toISOString();
 
-// Login User
-async function LoginUser(email) {
-  const db = await connectToDatabase();
+    debugDb(`User registration successful:
+      - ID: ${userId}
+      - Email: ${user.email}
+      - Created On: ${currentDate}
+      - Result: ${JSON.stringify(dbResult)}`);
 
-  try {
-    const user = await db.collection('Users').findOne({ email });
-    return user;
-  } catch (err) {
-    debugDb(`Error in LoginUser: ${err.message}`);
-    throw new Error(`Failed to login user: ${err.message}`);
-  }
-}
-
-// Update User
-async function UpdateUser(updatedUser) {
-  const db = await connectToDatabase();
-
-  try {
-    const { _id, ...updateFields } = updatedUser;
-
-    if (!ObjectId.isValid(_id)) {
-      throw new Error('Invalid ObjectId format');
-    }
-
-    const result = await db.collection('Users').updateOne(
-      { _id: new ObjectId(_id) },
-      { $set: updateFields }
-    );
-
-    debugDb(`UpdateUser: Modified ${result.modifiedCount} document(s) for ID ${_id}`);
-    return result;
-  } catch (err) {
-    debugDb(`Error in UpdateUser: ${err.message}`);
-    throw new Error(`Failed to update user: ${err.message}`);
-  }
-}
-
-// Delete User
-async function DeleteUser(id) {
-  const db = await connectToDatabase();
-
-  try {
-    if (!ObjectId.isValid(id)) {
-      throw new Error('Invalid ObjectId for deletion');
-    }
-
-    const result = await db.collection("Users").deleteOne({ _id: new ObjectId(id) });
-
-    debugDb(`DeleteUser: Deleted ${result.deletedCount} document(s) for ID ${id}`);
-    return result;
-  } catch (error) {
-    debugDb(`Error in DeleteUser: ${error.message}`);
-    throw new Error('Error deleting user');
-  }
-}
-
-// Bug Functions
-
-// Get All Bugs
-async function GetAllBugs() {
-  debugDb('GetAllBugs endpoint called');
-
-  try {
-    const db = await connectToDatabase();
-    const bugs = await db.collection('Bugs').find({}).toArray();
-    debugDb(`Found ${bugs.length} bugs`);
-    return bugs;
-  } catch (err) {
-    console.error('Error in GetAllBugs:', err.message);
-    throw new Error(`Failed to get bugs: ${err.message}`);
+    return dbResult; // Return the result from the database operation
+  }catch(error){
+    console.error(`Error in AddUser: ${error.message}`);
+  throw new Error('Error adding user');
   }
 };
 
-// Get Bug by ID
-async function GetBugById(id) {
-  if (!ObjectId.isValid(id)) {
-    throw new Error('Invalid bug ID format');
+async function LoginUser(email) {
+  try{
+    const db = await connect();
+    const user = await db.collection("Users").findOne({ email });
+    return user;
+  }catch(error){
+    console.error(`Error in LoginUser: ${error.message}`);
+    throw new Error('Error logging in user');
   }
+};
 
+async function UpdateUser(updatedUser) {
   try {
-    const db = await connectToDatabase();
-    const bug = await db.collection('Bugs').findOne(
-      { _id: new ObjectId(id) }
+    const db = await connect();
+    const { _id, ...updateFields } = updatedUser; // Exclude _id from the fields to be updated
+    const dbResult = await db.collection("Users").updateOne(
+      { _id: new ObjectId(_id) },
+      { $set: updateFields } // Ensure updatedUser is an object with the fields to update
+    );
+    console.log(`User updated in database: ${JSON.stringify(dbResult)}`);
+    return dbResult;
+  } catch (error) {
+    console.error(`Error in UpdateUser: ${error.message}`);
+    throw new Error('Error updating user');
+  }
+}
+
+async function DeleteUser(id) {
+  debugDb('DeleteUser initiated for ID: ' + id);
+  try{
+    const db = await connect();
+    const dbResult = await db.collection("Users").deleteOne({ _id: new ObjectId(id) });
+    debugDb(`DeleteUser: ${JSON.stringify(dbResult)}`);
+    return dbResult;
+  }catch(error){
+    console.error(`Error in DeleteUser: ${error.message}`);
+    throw new Error('Error deleting user');
+  }
+};
+
+// Bug functions
+async function GetAllBugs(){
+  debugDb('GetAllBugs');
+  try {
+    const db = await connect();
+    const bugs = await db.collection("Bugs").find({}).toArray();
+    return bugs;
+  }catch (error){
+    console.error(`Error in GetAllBugs: ${error.message}`);
+    throw new Error('Error retrieving bugs');
+  }
+};
+
+async function GetBugById(id){
+  try{
+    const db = await connect();
+
+    const bug = await db.collection("Bugs").findOne({ _id: new ObjectId(id) });
+    return bug;
+  }catch(error){
+    console.error(`Error in GetBugById: ${error.message}`);
+    throw new Error('Error retrieving bug');
+  }
+};
+
+async function AddBug(bug) {
+  try{
+    const db = await connect();
+    const dbResult = await db.collection("Bugs").insertOne(bug);
+    debugDb(`AddBug: ${JSON.stringify(dbResult)}`);
+
+    // Generate a new ObjectId for the bug and add creation date
+    //bug._id = dbResult.insertedId;
+    //bug.createdOn = new Date();
+
+    return dbResult;
+  }catch(error){
+    console.error(`Error in AddBug: ${error.message}`);
+    throw new Error('Error adding bug');
+  }
+};
+
+//FIXME: Refactor to add comments to existing bugs
+async function UpdateBug(bugId, update) {
+  const db = await connect();
+
+  try{
+    const dbResult = await db.collection("Bugs").updateOne(
+      { _id: new ObjectId(bugId) },
+      update
     );
 
-    if (!bug) {
-      debugDb(`No bug found with ID: ${id}`);
+    return dbResult;
+  }catch(err){
+    console.error(`Error in UpdateBug: ${err.message}`);
+    throw new Error('Error updating bug'); 
+  }
+};
+
+async function ClassifyBug(bugId, updatedFields) {
+  debugDb('ClassifyBug');
+  try{
+    const db = await connect();
+  
+    // Update the bug document in the database
+    const dbResult = await db.collection("Bugs").updateOne(
+      { _id: new ObjectId(bugId) }, 
+      { $set: updatedFields } 
+    );
+  
+    debugDb(`ClassifyBug: ${JSON.stringify(dbResult)}`);
+    return dbResult;
+  }catch(error){
+    console.error(`Error in ClassifyBug: ${error.message}`);
+    throw new Error('Error classifying bug');
+  }
+};
+
+async function AssignBug(bugId, updatedFields) {
+  debugDb('AssignBug');
+  try{
+    const db = await connect();
+    const dbResult = await db.collection("Bugs").updateOne(
+      { _id: new ObjectId(bugId) }, 
+      { $set: updatedFields } 
+    );
+    debugDb(`AssignBug: ${JSON.stringify(dbResult)}`);
+    return dbResult;
+  }catch(error){
+    console.error(`Error in AssignBug: ${error.message}`);
+    throw new Error('Error assigning bug');
+  }
+};
+
+async function CloseBug(bugId, updatedFields) {
+  debugDb('CloseBug');
+  try{
+    const db = await connect();
+
+    // Update the bug document in the database
+    const dbResult = await db.collection("Bugs").updateOne(
+        { _id: new ObjectId(bugId) },
+        { $set: updatedFields }
+    );
+
+    debugDb(`CloseBug: ${JSON.stringify(dbResult)}`);
+    return dbResult;
+  }catch(error){
+    console.error(`Error in CloseBug: ${error.message}`);
+    throw new Error('Error closing bug');
+  }
+};
+
+// Comment functions
+async function GetAllComments(){
+  debugDb('GetAllComments');
+  const db = await connect();
+  try{
+    const comments = await db.collection("Comments").find({}).toArray();
+    debugDb(`Fetched ${comments.length} comments`);
+    return comments;
+  }catch(error){
+    console.error(`Error in GetAllComments: ${error.message}`);
+    throw new Error('Error retrieving comments');
+  }
+};
+
+async function GetCommentById(id){
+  debugDb('GetCommentById');
+  const db = await connect();
+
+  try{
+    if (!ObjectId.isValid(id)){
       return null;
     }
 
-    return bug;
-  } catch (error) {
-    debugDb(`Error in GetBugById: ${error.message}`);
-    throw new Error('Error retrieving bug');
+    const comment = await db.collection("Comments").findOne({ _id: new ObjectId(id) });
+    debugDb(`Fetched comment: ${JSON.stringify(comment)}`);
+    return comment;
+  }catch(error){
+    console.error(`Error in GetCommentById: ${error.message}`);
+    throw new Error('Error retrieving comment');
   }
-}
+};
 
-// Create Bug
-async function CreateBug(bug) {
-  try {
-    const db = await connectToDatabase();
+//FIXME: Refactor for inserting new comments to an existing bug, or disable this function
+async function AddComment(comment){
+  debugDb('AddComment');
+  const db = await connect();
 
-    // Add createdOn date if already not present
-    const bugWithMeta = {
-      ...bug,
-      createdOn: bug.createdOn || new Date(),
-    };
-
-    const dbResult = await db.collection('Bugs').insertOne(bugWithMeta);
-
-    debugDb(`Bug created with ID: ${dbResult.insertedId}`);
+  try{
+    const dbResult = await db.collection("Comments").insertOne(comment);
+    debugDb(`Comment added with ID: ${dbResult.insertedId}`);
     return dbResult;
-  } catch (err) {
-    debugDb(`Error creating bug: ${err.message}`);
-    throw new Error(`Failed to create bug: ${err.message}`);
+  }catch(error){
+    console.error(`Error in AddComment: ${error.message}`);
+    throw new Error('Error adding comment');
   }
-}
+};
 
-// Update Bug
-async function UpdateBug(bugId, update) {
-  const db = await connectToDatabase();
+// Test Case functions
+async function GetAllTests() {
+  debugDb('GetAllTests');
+  const db = await connect();
+  try{
+    const tests = await db.collection("Tests").find({}).toArray();
+    debugDb(`Fetched ${tests.length} tests`);
+    return tests;
+  }catch(error){
+    console.error(`Error in GetAllTests: ${error.message}`);
+    throw new Error('Error retrieving tests');
+  }
+};
 
-  try {
-    const dbResult = await db.collection('Bugs').updateOne(
-      { _id: new ObjectId(bugId) },
-      { $set: update }
-    );
+async function GetTestById(id){
+  debugDb('GetTestById');
+  const db = await connect();
+  
+  try{
+    const test = await db.collection("Tests").findOne({ _id: new ObjectId(id) });
+    debugDb(`Fetched test: ${JSON.stringify(test)}`);
+    return test;
+  }catch(error){
+    console.error(`Error in GetTestById: ${error.message}`);
+    throw new Error('Error retrieving test');
+  }
+};
 
-    debugDb(`Bug updated with ID: ${bugId}, Modified Count: ${dbResult.modifiedCount}`);
+async function AddTest(test){
+  debugDb('AddTest');
+  const db = await connect();
+
+  try{
+    const dbResult = await db.collection("Tests").insertOne(test);
+    debugDb(`Test added with ID: ${dbResult.insertedId}`);
     return dbResult;
-  } catch (err) {
-    debugDb(`Error updating bug: ${err.message}`);
-    throw new Error(`Failed to update bug: ${err.message}`);
+  }catch(error){
+    console.error(`Error in AddTest: ${error.message}`);
+    throw new Error('Error adding test');
   }
+};
+
+async function UpdateTest(updatedTest){
+  const db = await connect();
+  const dbResult = await db.collection("Tests").updateOne(
+    { _id: new ObjectId(updatedTest._id) }, 
+    { $set: updatedTest }
+  );
+  debugDb(`UpdateTest: ${JSON.stringify(dbResult)}`);
+  return dbResult;
 }
 
-// Close Bug
-async function CloseBug(bugId, updatedFields) {
-  const db = await connectToDatabase();
-
-  try {
-    if (!ObjectId.isValid(bugId)) {
-      throw new Error('Invalid bug ID format');
-    }
-
-    const dbResult = await db.collection('Bugs').updateOne(
-      { _id: new ObjectId(bugId) },
-      { $set: updatedFields }
-    );
-
-    debugDb(`Bug closed with ID: ${bugId}, Modified Count: ${dbResult.modifiedCount}`);
-    return dbResult;
-  } catch (err) {
-    debugDb(`Error closing bug: ${err.message}`);
-    throw new Error(`Failed to close bug: ${err.message}`);
-  }
-}
-
-
-// Comment Functions
-// We'll add the comment and test functions later once things are working.
-
-// Get All Comments for a Bug
-async function GetAllComments() {
-  debugDb('GetAllComments endpoint called');
-
-  try {
-    const db = await connectToDatabase();
-    const comments = await db.collection('Comments').find({}).toArray();
-    debugDb(`Found ${comments.length} comments`);
-    return comments;
-  } catch (err) {
-    console.error('Error in GetAllComments:', err.message);
-    throw new Error(`Failed to get comments: ${err.message}`);
-  }
-}
-
+async function DeleteTest(id){
+  debugDb('DeleteTest initiated for ID: ' + id);
+  const db = await connect();
+  const dbResult = await db.collection("Tests").deleteOne({ _id: new ObjectId(id) });
+  debugDb(`DeleteTest: ${JSON.stringify(dbResult)}`);
+  return dbResult;
+};
 
 // Universal functions for user.js and bug.js
 
-function getSortOptions(sortBy, type) {
+function getSortOptions(sortBy, type){
   const sort = {};
 
-  if (type === 'user') {
-    switch (sortBy) {
+  if (type === 'user'){
+    switch (sortBy){
       case 'givenName':
-        sort['givenName'] = 1; // Ascending
-        sort['familyName'] = 1; // Ascending
-        sort['createdOn'] = 1; // Ascending
+        sort['givenName'] = 1; // ascending
+        sort['familyName'] = 1; // ascending
+        sort['createdOn'] = 1; // ascending
         break;
       case 'familyName':
-        sort['familyName'] = 1; // Ascending
-        sort['givenName'] = 1; // Ascending
-        sort['createdOn'] = 1; // Ascending
+        sort['familyName'] = 1;
+        sort['givenName'] = 1;
+        sort['createdOn'] = 1;
         break;
       case 'role':
-        sort['role'] = 1; // Ascending
-        sort['givenName'] = 1; // Ascending
-        sort['familyName'] = 1; // Ascending
-        sort['createdOn'] = 1; // Ascending
+        sort['role'] = 1;
+        sort['givenName'] = 1;
+        sort['familyName'] = 1;
+        sort['createdOn'] = 1;
         break;
       case 'newest':
-        sort['createdOn'] = -1; // Descending
+        sort['createdOn'] = -1; // descending
         break;
       case 'oldest':
-        sort['createdOn'] = 1; // Ascending
+        sort['createdOn'] = 1; // ascending
         break;
       default:
-        sort['givenName'] = 1; // Default sort by givenName ascending
+        sort['givenName'] = 1; // default sort
     }
-  } else if (type === 'bug') {
+  } else if (type === 'bug'){
     switch (sortBy){
       case 'title':
         sort['title'] = 1;
@@ -454,61 +510,35 @@ function getSortOptions(sortBy, type) {
   return sort;
 };
 
-async function saveAuditLog(log) {
-  const db = await connectToDatabase();
-  const dbResult = await db.collection('Edits').insertOne(log);
-  debugDb(`Audit log saved with ID: ${dbResult.insertedId}`);
+async function saveAuditLog(log){
+  const db = await connect();
+  const dbResult = await db.collection("Edits").insertOne(log);
   return dbResult;
 }
 
-async function hashPassword(password) {
-  try {
-    const saltRounds = parseInt(process.env.SALT_ROUNDS) || 10;
+async function hashPassword(password){
+  try{
+    const saltRounds = 10; //adjust as necessary, 10 is a good default
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    debugDb(`Password hashed successfully`);
     return hashedPassword;
-  } catch (err) {
-    debugDb(`Error hashing password: ${err.message}`);
-    throw new Error(`Failed to hash password: ${err.message}`);
+  } catch(error){
+    console.error(`Error in hashPassword: ${error.message}`);
+    throw new Error('Error hashing password');
   }
 }
 
-async function findRoleByName(roleName) {
-  const db = await connectToDatabase();
-  const role = await db.collection('Roles').findOne({ name: roleName });
-
-  if (!role) {
-    debugDb(`Role not found: ${roleName}`);
-    throw new Error(`Role not found: ${roleName}`);
-  }
-
-  debugDb(`Role found: ${role.name}`);
+async function findRoleByName(roleName){
+  const db = await connect();
+  const role = await db.collection("Roles").findOne({ name: roleName });
   return role;
 }
 
-// Exports
-export {
-  connectToDatabase,
-  ping,
-  newId,
-  GetAllUsers,
-  GetUserById,
-  GetUserByEmail,
-  RegisterUser,
-  LoginUser,
-  UpdateUser,
-  DeleteUser,
-  GetAllBugs,
-  GetBugById,
-  CreateBug,
-  UpdateBug,
-  CloseBug,
-  GetAllComments,
-  getSortOptions,
-  saveAuditLog,
-  hashPassword,
-  findRoleByName
-};
+/** export functions */
+export { newId, connect, ping, GetAllUsers, GetUserById, GetUserByEmail, RegisterUser, LoginUser, UpdateUser, DeleteUser, 
+         GetAllBugs, GetBugById, AddBug, UpdateBug, ClassifyBug, AssignBug, CloseBug, 
+         GetAllComments, GetCommentById, AddComment, 
+         GetAllTests, GetTestById, AddTest, UpdateTest, DeleteTest, 
+         getSortOptions, saveAuditLog, hashPassword, findRoleByName }; 
 
-// Test DB Connection
+/** test database connection */
 ping();

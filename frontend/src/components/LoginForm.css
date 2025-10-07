@@ -1,12 +1,12 @@
-.login-container{
+.login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #5B6D92
+  background-color: #5B6D92;
 }
 
-.login-box{
+.login-box {
   max-width: 400px;
   width: 100%;
   margin: 0 auto;
@@ -14,7 +14,7 @@
   padding: 2rem;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  animation: fadeIn .5s ease-out;
+  animation: fadeIn 0.5s ease-out;
 }
 
 @keyframes fadeIn {
@@ -28,49 +28,56 @@
   }
 }
 
-.login-title{
+.login-title {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 1.5rem;
   text-align: center;
-  color: #364042
+  color: #364042;
 }
 
-.login-form{
+.login-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
-#password, #email {
-  padding: .5rem; /* Keep padding minimal to avoid misalignment */
-  border: 1px solid #D18266;
-  border-radius: 0 4px 4px 0; /* Align corners properly with input-group-text */
-  font-size: 1rem;
-  transition: border-color .3s ease;
-  width: auto; /* Let Bootstrap handle width for form-control */
-}
-
+/* Input group styling for unified focus state */
 .input-group-text {
-  border-radius: 4px 0 0 4px; /* Match the rounded corners of the form-control */
-  background-color: #f8f9fa; /* Optional: customize background */
-  border: 1px solid #D18266; /* Ensure consistent border with form-control */
-}
-
-.input-group {
+  border-radius: 4px 0 0 4px;
+  background-color: #f8f9fa;
+  border: 1px solid #D18266;
+  height: 42px;
   display: flex;
-  align-items: center; /* Enforce horizontal alignment */
+  align-items: center;
 }
 
-.input-field {
-  flex-grow: 1; /* Ensure input field expands to fill the remaining space */
+/* Apply focus styling to both icon and input */
+.input-group:focus-within .input-group-text {
+  border-color: #fd7e14;
+  box-shadow: 0 0 0 0.25rem rgba(253, 126, 20, 0.25);
 }
 
-
-.input-icon{
-  color: #D18266
+.input-group .form-control:focus {
+  box-shadow: none;
+  border-color: #fd7e14;
 }
 
-.text-primary{
+/* Ensure input has consistent border */
+.input-group .form-control {
+  border: 1px solid #D18266;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Handle invalid state for the icon span */
+.input-group:has(.form-control.is-invalid) .input-group-text {
+  border-color: #dc3545;
+}
+
+.input-icon {
+  color: #D18266;
+}
+
+.text-primary {
   font-size: 1vw;
 }

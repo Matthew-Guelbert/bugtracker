@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
@@ -14,8 +16,6 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
 
   useEffect(() => {
     (() => {
-      'use strict';
-
       const forms = document.querySelectorAll('.needs-validation');
 
       Array.from(forms).forEach((form) => {
@@ -61,10 +61,14 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
 
     // Send POST request if inputs are valid
     axios
-      .post('http://localhost:5000/api/users/login', { email, password }, {
-        withCredentials: true,
-        validateStatus: (status) => status < 500,
-      })
+      .post(
+        'http://localhost:5000/api/users/login',
+        { email, password },
+        {
+          withCredentials: true,
+          validateStatus: (status) => status < 500,
+        }
+      )
       .then((res) => {
         if (res.status === 200) {
           setProfile(res.data); // Set the profile data in context
@@ -74,7 +78,8 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
       })
       .catch((err) => {
         if (err.response && err.response.status === 401) {
-          const errorMessage = err.response.data.message || 'Invalid email or password';
+          const errorMessage =
+            err.response.data.message || 'Invalid email or password';
           showError(errorMessage);
           toast.error(errorMessage);
         } else {
@@ -86,64 +91,82 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h2 className="login-title">Login</h2>
-        <form
-          className="login-form needs-validation"
-          noValidate
-          onSubmit={handleSubmit}
-        >
-          <div className="mb-3">
-            <label htmlFor="email" className="form-label">
-              Email Address
-            </label>
-            <div className="input-group">
-              <span className="input-group-text" id="email-addon">
-                <i className="bi bi-envelope-fill input-icon"></i>
-              </span>
-              <input
-                type="email"
-                className={`form-control input-field ${isEmailValid ? '' : 'is-invalid'}`}
-                id="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <div className="invalid-feedback">
-                Please enter a valid email address.
+    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
+      <div
+        className="card shadow-lg border-0"
+        style={{ maxWidth: '420px', width: '100%' }}
+      >
+        <div className="card-body p-5">
+          <h2 className="text-center mb-2 fw-bold">Welcome Back</h2>
+          <p className="text-center text-muted mb-4">Sign in to your account</p>
+
+          <form className="needs-validation" noValidate onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label htmlFor="email" className="form-label fw-medium">
+                Email Address
+              </label>
+              <div className="input-group has-validation">
+                <span className="input-group-text">
+                  <i className="bi bi-envelope-fill text-muted"></i>
+                </span>
+                <input
+                  type="email"
+                  className={`form-control ${isEmailValid ? '' : 'is-invalid'}`}
+                  id="email"
+                  placeholder="you@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <div className="invalid-feedback">
+                  Please enter a valid email address.
+                </div>
               </div>
             </div>
-          </div>
-          <div className="mb-3">
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <div className="input-group">
-              <span className="input-group-text" id="password-addon">
-                <i className="bi bi-lock-fill input-icon"></i>
-              </span>
-              <input
-                type="password"
-                className={`form-control input-field ${isPasswordValid ? '' : 'is-invalid'}`}
-                id="password"
-                required
-                minLength={6}  // Updated password length requirement
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <div className="invalid-feedback">
-                Please enter a valid password with a minimum of 6 characters.
+
+            <div className="mb-4">
+              <label htmlFor="password" className="form-label fw-medium">
+                Password
+              </label>
+              <div className="input-group has-validation">
+                <span className="input-group-text">
+                  <i className="bi bi-lock-fill text-muted"></i>
+                </span>
+                <input
+                  type="password"
+                  className={`form-control ${
+                    isPasswordValid ? '' : 'is-invalid'
+                  }`}
+                  id="password"
+                  placeholder="Enter your password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <div className="invalid-feedback">
+                  Please enter a valid password with a minimum of 6 characters.
+                </div>
               </div>
             </div>
-          </div>
-          <button type="submit" className="btn btn-primary">
-            Login
-          </button>
-          <div className="mt-3">
-            <p>Don't have an account? <Link to="/register">Register here</Link></p>
-          </div>
-        </form>
+
+            <button
+              type="submit"
+              className="btn btn-primary w-100 py-2 fw-medium mb-4"
+            >
+              Sign In
+            </button>
+
+            <div className="text-center pt-3 border-top">
+              <p className="text-muted mb-0">
+                Don't have an account?{' '}
+                <Link to="/register" className="text-decoration-none fw-medium">
+                  Create one
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './AddBug.css';
@@ -13,13 +14,9 @@ const AddBug = ({ auth, showError, showSuccess }) => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const getUserFromToken = () => {
-    const authToken = localStorage.getItem('authToken');
-    if (!authToken) return 'Unknown'; // Fallback if no token
-
-    const decodedToken = JSON.parse(atob(authToken.split('.')[1])); // Decode JWT payload
-    return decodedToken.name || 'Unknown'; // Use name from token or fallback to 'Unknown'
-  };
+  const handleCancel = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,21 +24,29 @@ const AddBug = ({ auth, showError, showSuccess }) => {
     // Validation for required fields
     if (!bug.title || !bug.description || !bug.stepsToReproduce) {
       setError('Please fill out all fields.');
+      showError('Please fill out all fields.');
       return;
     }
 
+    // Check if user is authenticated
+    if (!auth?.token || !auth?.name) {
+      setError('Authentication required. Please log in again.');
+      showError('Authentication required. Please log in again.');
+      return;
+    }
+
+    console.log('Auth data:', { token: auth.token, name: auth.name });
     setLoading(true);
     setError(null); // Clear previous errors
 
     try {
-      const token = localStorage.getItem('authToken');
-      const response = await axios.post('/api/bugs', {
+      await axios.post('http://localhost:5000/api/bugs', {
         ...bug,
-        author: getUserFromToken(), // Set the bug author
+        author: auth.name, // Use auth.name as required by schema
       }, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${auth.token}` },
       });
-      console.log('Bug created successfully:', response.data);
+      
       setBug({ // Reset bug form after submission
         title: '',
         description: '',
@@ -51,7 +56,28 @@ const AddBug = ({ auth, showError, showSuccess }) => {
       navigate('/bugs'); // Redirect to BugList.jsx
     } catch (error) {
       console.error('Error creating bug:', error);
-      setError('Failed to create the bug. Please try again.');
+      console.error('Error response:', error.response?.data);
+      console.error('Full error details:', JSON.stringify(error.response?.data, null, 2));
+      console.error('Error status:', error.response?.status);
+      console.error('Request data sent:', {
+        ...bug,
+        author: auth.name,
+      });
+      
+      // Handle validation errors specifically
+      let errorMessage = 'Failed to create the bug. Please try again.';
+      if (error.response?.data?.error) {
+        if (Array.isArray(error.response.data.error)) {
+          errorMessage = error.response.data.error.join(', ');
+        } else {
+          errorMessage = error.response.data.error;
+        }
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -110,13 +136,22 @@ const AddBug = ({ auth, showError, showSuccess }) => {
         <button
           type="button"
           className="btn btn-secondary ms-2"
-          onClick={() => navigate(-1)} // Navigate back to the previous page
+          onClick={handleCancel}
         >
           Cancel
         </button>
       </form>
     </div>
   );
+};
+
+AddBug.propTypes = {
+  auth: PropTypes.shape({
+    token: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+  }).isRequired,
+  showError: PropTypes.func.isRequired,
+  showSuccess: PropTypes.func.isRequired,
 };
 
 export default AddBug;

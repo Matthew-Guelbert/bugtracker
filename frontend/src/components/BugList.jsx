@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import BugListItem from './BugListItem';
@@ -15,68 +16,79 @@ const BugList = ({ auth, showError, showSuccess }) => {
   const [closed, setClosed] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
 
-  const [debounceTimer, setDebounceTimer] = useState(null);
-
   const navigate = useNavigate();
   const keywordsRef = useRef(null); // Reference for the keywords input field
+  const debounceTimerRef = useRef(null); // Reference for the debounce timer
 
   // Fetch bugs based on search criteria
   const fetchBugs = useCallback(async () => {
-    console.log('Fetching bugs with criteria:', { keywords, classification, maxAge, minAge, closed, sortBy });
+    if (!auth?.token) {
+      setError('Authentication required');
+      showError('Please log in to view bugs');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
+    setError(null); // Clear previous errors
     try {
-      const response = await axios.get('/api/bugs', {
+      const response = await axios.get('http://localhost:5000/api/bugs', {
         headers: {
           Authorization: `Bearer ${auth.token}`,
         },
         params: {
-          keywords,
+          keywords: keywords.trim(),
           classification,
-          maxAge,
-          minAge,
+          maxAge: maxAge || undefined,
+          minAge: minAge || undefined,
           closed,
           sortBy,
         },
       });
-      console.log('Bugs response:', response.data);
       setBugs(response.data);
-      showSuccess('Bugs loaded successfully');
+      if (response.data.length === 0 && keywords.trim()) {
+        showSuccess('No bugs found matching your search criteria');
+      }
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to load bugs';
       console.error('Error fetching bugs:', errorMessage);
       setError(errorMessage);
       showError(errorMessage);
+      setBugs([]); // Clear bugs on error
     } finally {
       setLoading(false);
-      console.log('Loading state set to false');
     }
   }, [auth.token, keywords, classification, maxAge, minAge, closed, sortBy, showError, showSuccess]);
 
   // Debounced useEffect for search criteria changes
   useEffect(() => {
-    console.log('Search criteria changed:', { keywords, classification, maxAge, minAge, closed, sortBy });
     // Clear existing debounce timer
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
 
     // Set a new debounce timer
-    const timer = setTimeout(() => {
+    debounceTimerRef.current = setTimeout(() => {
       fetchBugs();
-    }, 500); // Adjust debounce time as needed (500ms delay)
-
-    setDebounceTimer(timer);
+    }, 500); // 500ms delay for debounce
 
     // Cleanup function
-    return () => clearTimeout(timer);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [keywords, classification, maxAge, minAge, closed, sortBy, fetchBugs]);
 
-  // Re-focus the keywords input field after component updates
-  useEffect(() => {
-    if (keywordsRef.current) {
-      keywordsRef.current.focus();
-    }
-  }, [bugs]);
+
+
+  const handleReportBug = useCallback(() => {
+    navigate('/bugs/add');
+  }, [navigate]);
+
+  const handleGoBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
 
   const memoizedBugs = useMemo(() => {
     return bugs.map((bug) => (
@@ -99,7 +111,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
         <h2>Bug Tracker</h2>
         <button
           className="btn btn-primary"
-          onClick={() => navigate('/bugs/add')}
+          onClick={handleReportBug}
         >
           Report Bug
         </button>
@@ -192,7 +204,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
           <div className="mt-3">
             <button
               className="btn btn-secondary"
-              onClick={() => navigate(-1)} // Use navigate(-1) to go back to the previous page
+              onClick={handleGoBack}
             >
               Go Back
             </button>
@@ -203,6 +215,14 @@ const BugList = ({ auth, showError, showSuccess }) => {
       )}
     </div>
   );
+};
+
+BugList.propTypes = {
+  auth: PropTypes.shape({
+    token: PropTypes.string.isRequired,
+  }).isRequired,
+  showError: PropTypes.func.isRequired,
+  showSuccess: PropTypes.func.isRequired,
 };
 
 export default BugList;

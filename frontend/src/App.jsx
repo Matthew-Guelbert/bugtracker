@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.js';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
-import { UserProfileProvider, useUserProfile } from './contexts/UserProfileContext';
+import { useUserProfile } from './contexts/UserProfileContext';
 
 import LoginForm from './components/LoginForm';
 import RegisterForm from './components/RegisterForm';
@@ -33,6 +33,7 @@ import MyBugList from './components/MyBugList'; // Ensure this component exists
 
 const App = () => {
   const [auth, setAuth] = useState(null);
+  const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
   const { setProfile } = useUserProfile();
 
@@ -53,46 +54,34 @@ const App = () => {
       }
     );
 
-    // Retrieve token from localStorage and set auth state
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      const user = JSON.parse(localStorage.getItem('user'));
-      setAuth({ token, ...user });
-      setProfile(user);
-    }
+    // Initialize auth state from localStorage
+    const initializeAuth = () => {
+      const token = localStorage.getItem('authToken');
+      const userString = localStorage.getItem('user');
+      
+      if (token && userString) {
+        try {
+          const user = JSON.parse(userString);
+          const authData = { token, ...user };
+          setAuth(authData);
+          setProfile(authData);
+        } catch (error) {
+          console.error('Error parsing user data from localStorage:', error);
+          // Clear invalid data
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+        }
+      }
+      setIsInitialized(true);
+    };
+
+    initializeAuth();
 
     // Clean up on unmount
     return () => {
       axios.interceptors.request.eject(interceptor);
     };
   }, [setProfile]);
-
-  const onLogin = (auth) => {
-    setAuth(auth);
-    setProfile(auth); // Set the profile data in context
-    localStorage.setItem('authToken', auth.token);
-    localStorage.setItem('user', JSON.stringify(auth));
-    navigate('/landing');
-    showSuccess('Login successful');
-  };
-
-  const onRegister = (auth) => {
-    setAuth(auth);
-    setProfile(auth); // Set the profile data in context
-    localStorage.setItem('authToken', auth.token);
-    localStorage.setItem('user', JSON.stringify(auth));
-    navigate('/landing');
-    showSuccess('Registration successful');
-  };
-
-  const onLogout = () => {
-    setAuth(null);
-    setProfile(null); // Clear the profile data in context
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    navigate('/login');
-    showSuccess('User has been logged out');
-  };
 
   const showError = useCallback((message) => {
     toast(message, { type: 'error', position: 'bottom-right' });
@@ -102,32 +91,127 @@ const App = () => {
     toast(message, { type: 'success', position: 'bottom-right' });
   }, []);
 
+  const onLogin = useCallback((authData) => {
+    setAuth(authData);
+    setProfile(authData);
+    localStorage.setItem('authToken', authData.token);
+    localStorage.setItem('user', JSON.stringify(authData));
+    navigate('/landing');
+    showSuccess('Login successful');
+  }, [navigate, setProfile, showSuccess]);
+
+  const onRegister = useCallback((authData) => {
+    setAuth(authData);
+    setProfile(authData);
+    localStorage.setItem('authToken', authData.token);
+    localStorage.setItem('user', JSON.stringify(authData));
+    navigate('/landing');
+    showSuccess('Registration successful');
+  }, [navigate, setProfile, showSuccess]);
+
+  const onLogout = useCallback(() => {
+    setAuth(null);
+    setProfile(null);
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    navigate('/login');
+    showSuccess('User has been logged out');
+  }, [navigate, setProfile, showSuccess]);
+
+  // Show loading spinner while initializing auth state
+  if (!isInitialized) {
+    return (
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <Navbar auth={auth} onLogout={onLogout} />
       <ToastContainer />
       <main className="container my-5">
         <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
-          <Route path="/login" element={<LoginForm onLogin={onLogin} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/register" element={<RegisterForm onRegister={onRegister} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/landing" element={<LandingPage auth={auth} />} />
-          <Route path="/profile" element={<ProfileDetails auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/profile/edit" element={<EditProfile auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs" element={<BugList auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId" element={<BugDetails auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId/add-comment" element={<AddComment auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId/edit" element={<BugEditor auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/add" element={<AddBug auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId/add-test" element={<AddTest auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId/test-cases" element={<CaseDetails auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId/log-hours" element={<LogHours auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId/logs" element={<ViewLogs auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/bugs/:bugId/tests/:testId/edit" element={<EditTestCase auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/my-bugs" element={<MyBugList auth={auth} showError={showError} showSuccess={showSuccess} />} /> {/* Ensure this route exists */}
-          <Route path="/users" element={<UserList auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/users/:userId" element={<UserDetails auth={auth} showError={showError} showSuccess={showSuccess} />} />
-          <Route path="/users/:userId/edit" element={<UserEditor auth={auth} showError={showError} showSuccess={showSuccess} />} />
+          <Route path="/" element={<Navigate to={auth ? "/landing" : "/login"} />} />
+          <Route 
+            path="/login" 
+            element={auth ? <Navigate to="/landing" /> : <LoginForm onLogin={onLogin} showError={showError} showSuccess={showSuccess} />} 
+          />
+          <Route 
+            path="/register" 
+            element={auth ? <Navigate to="/landing" /> : <RegisterForm onRegister={onRegister} showError={showError} showSuccess={showSuccess} />} 
+          />
+          <Route 
+            path="/landing" 
+            element={auth ? <LandingPage /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/profile" 
+            element={auth ? <ProfileDetails auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/profile/edit" 
+            element={auth ? <EditProfile auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs" 
+            element={auth ? <BugList auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId" 
+            element={auth ? <BugDetails auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId/add-comment" 
+            element={auth ? <AddComment auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId/edit" 
+            element={auth ? <BugEditor auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/add" 
+            element={auth ? <AddBug auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId/add-test" 
+            element={auth ? <AddTest auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId/test-cases" 
+            element={auth ? <CaseDetails auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId/log-hours" 
+            element={auth ? <LogHours auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId/logs" 
+            element={auth ? <ViewLogs auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/bugs/:bugId/tests/:testId/edit" 
+            element={auth ? <EditTestCase auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/my-bugs" 
+            element={auth ? <MyBugList auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/users" 
+            element={auth ? <UserList auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/users/:userId" 
+            element={auth ? <UserDetails auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/users/:userId/edit" 
+            element={auth ? <UserEditor auth={auth} showError={showError} showSuccess={showSuccess} /> : <Navigate to="/login" />} 
+          />
         </Routes>
       </main>
       <Footer />

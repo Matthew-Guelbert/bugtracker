@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
@@ -159,7 +160,7 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
 
             <div className="text-center pt-3 border-top">
               <p className="text-muted mb-0">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link to="/register" className="text-decoration-none fw-medium">
                   Create one
                 </Link>
@@ -170,6 +171,12 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
       </div>
     </div>
   );
+};
+
+LoginForm.propTypes = {
+  onLogin: PropTypes.func.isRequired,
+  showError: PropTypes.func.isRequired,
+  showSuccess: PropTypes.func.isRequired,
 };
 
 export default LoginForm;

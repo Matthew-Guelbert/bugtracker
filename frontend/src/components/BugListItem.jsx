@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import moment from 'moment';
 import { Link } from 'react-router-dom';
 
@@ -35,6 +35,19 @@ const BugListItem = ({ item }) => {
       </div>
     </div>
   );
+};
+
+BugListItem.propTypes = {
+  item: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    classification: PropTypes.string.isRequired,
+    closed: PropTypes.bool.isRequired,
+    assignedToUserName: PropTypes.string,
+    createdOn: PropTypes.string.isRequired,
+    createdBy: PropTypes.string,
+    author: PropTypes.string,
+  }).isRequired,
 };
 
 export default BugListItem;

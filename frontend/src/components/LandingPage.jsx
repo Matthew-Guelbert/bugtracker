@@ -1,9 +1,8 @@
-import React from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { useUserProfile } from '../contexts/UserProfileContext';
 import './LandingPage.css';
 
-const LandingPage = ({ auth }) => {
+const LandingPage = () => {
   const { profile } = useUserProfile();
   const navigate = useNavigate();
 

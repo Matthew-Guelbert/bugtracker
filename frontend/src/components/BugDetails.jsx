@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import moment from 'moment';
@@ -12,15 +13,18 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
 
   useEffect(() => {
     const fetchBugDetails = async () => {
+      if (!auth?.token) {
+        setError('Authentication required');
+        showError('Please log in to view bug details');
+        setLoading(false);
+        return;
+      }
+
       try {
-        const token = localStorage.getItem('authToken');
-        console.log('Fetching bug details for bugId:', bugId);
-        const response = await axios.get(`/api/bugs/${bugId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.get(`http://localhost:5000/api/bugs/${bugId}`, {
+          headers: { Authorization: `Bearer ${auth.token}` },
         });
-        console.log('Bug details response:', response.data);
         setBug(response.data);
-        showSuccess('Bug details loaded successfully');
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'Failed to load bug details';
         console.error('Error fetching bug details:', errorMessage);
@@ -32,39 +36,39 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
     };
 
     fetchBugDetails();
-  }, [bugId, showError, showSuccess]);
+  }, [bugId, auth?.token, showError, showSuccess]);
 
-  const handleGoBack = () => {
-    navigate(-1); // Go back to the previous page
-  };
+  const handleGoBack = useCallback(() => {
+    navigate(-1);
+  }, [navigate]);
 
-  const handleAddComment = () => {
-    navigate(`/bugs/${bugId}/add-comment`); // Navigate to AddComment page
-  };
+  const handleAddComment = useCallback(() => {
+    navigate(`/bugs/${bugId}/add-comment`);
+  }, [navigate, bugId]);
 
-  const handleAddTestCase = () => {
-    navigate(`/bugs/${bugId}/add-test`); // Navigate to AddTestCase page
-  };
+  const handleAddTestCase = useCallback(() => {
+    navigate(`/bugs/${bugId}/add-test`);
+  }, [navigate, bugId]);
 
-  const handleLogTime = () => {
-    navigate(`/bugs/${bugId}/log-hours`); // Navigate to LogHours page
-  };
+  const handleLogTime = useCallback(() => {
+    navigate(`/bugs/${bugId}/log-hours`);
+  }, [navigate, bugId]);
 
-  const handleEditBug = () => {
-    navigate(`/bugs/${bugId}/edit`); // Navigate to BugEditor page
-  };
+  const handleEditBug = useCallback(() => {
+    navigate(`/bugs/${bugId}/edit`);
+  }, [navigate, bugId]);
 
-  const handleViewTestCases = () => {
-    navigate(`/bugs/${bugId}/test-cases`); // Navigate to CaseDetails page
-  };
+  const handleViewTestCases = useCallback(() => {
+    navigate(`/bugs/${bugId}/test-cases`);
+  }, [navigate, bugId]);
 
-  const handleViewLogs = () => {
-    navigate(`/bugs/${bugId}/logs`); // Navigate to ViewLogs page
-  };
+  const handleViewLogs = useCallback(() => {
+    navigate(`/bugs/${bugId}/logs`);
+  }, [navigate, bugId]);
 
-  const handleEditTestCase = (testId) => {
-    navigate(`/bugs/${bugId}/tests/${testId}/edit`); // Navigate to EditTestCase page
-  };
+  const handleEditTestCase = useCallback((testId) => {
+    navigate(`/bugs/${bugId}/tests/${testId}/edit`);
+  }, [navigate, bugId]);
 
   if (loading) {
     return <p>Loading...</p>;
@@ -78,15 +82,16 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
     return <div className="alert alert-danger">Bug not found.</div>;
   }
 
-  console.log('Bug details:', bug);
-
-  const isAdmin = auth.role.includes('Admin');
-  const isDeveloper = auth.role.includes('Developer');
-  const isBusinessAnalyst = auth.role.includes('Business Analyst');
-  const isQualityAnalyst = auth.role.includes('Quality Analyst');
-  const isProductManager = auth.role.includes('Product Manager');
-  const isAuthor = auth.name === (bug.author || bug.createdBy);
-  const isAssignedToUser = auth.name === bug.assignedToUserName;
+  // Role and permission checks with safety checks
+  const userRoles = auth?.role || [];
+  const userName = auth?.name || '';
+  
+  const isAdmin = userRoles.includes('Admin');
+  const isDeveloper = userRoles.includes('Developer');
+  const isQualityAnalyst = userRoles.includes('Quality Analyst');
+  const isProductManager = userRoles.includes('Product Manager');
+  const isAuthor = userName === (bug.author || bug.createdBy);
+  const isAssignedToUser = userName === bug.assignedToUserName;
 
   return (
     <div className="bug-details">
@@ -94,9 +99,10 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
       <p><strong>Description:</strong> {bug.description}</p>
       <p><strong>Steps to Reproduce:</strong> {bug.stepsToReproduce}</p>
       <p>
-        <strong>Classification:</strong> 
-        <span className={`badge ${bug.classification === 'approved' ? 'bg-success' : 'bg-danger'}`} />
-        {bug.classification}
+        <strong>Classification:</strong>{' '}
+        <span className={`badge ${bug.classification === 'approved' ? 'bg-success' : 'bg-danger'}`}>
+          {bug.classification}
+        </span>
       </p>
       <p>
         <strong>Status:</strong> 
@@ -122,24 +128,54 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
           </ul>
         )}
       </div>
-      <button className="btn btn-secondary" onClick={handleGoBack}>Go Back</button>
-      <button className="btn btn-primary ms-2" onClick={handleAddComment}>Add Comment</button>
-      {(isAdmin || isQualityAnalyst) && (
-        <button className="btn btn-primary ms-2" onClick={handleAddTestCase}>Add Test Case</button>
-      )}
-      {(isAdmin || isDeveloper) && (
-        <button className="btn btn-primary ms-2" onClick={handleLogTime}>Log Time</button>
-      )}
-      {(isAdmin || isAuthor || isAssignedToUser || isProductManager) && (
-        <button className="btn btn-primary ms-2" onClick={handleEditBug}>Edit Bug</button>
-      )}
-      <button className="btn btn-primary ms-2" onClick={handleViewTestCases}>View Test Cases</button>
-      <button className="btn btn-primary ms-2" onClick={handleViewLogs}>View Logs</button>
-      {(isAdmin || isQualityAnalyst) && (
-        <button className="btn btn-primary ms-2" onClick={() => handleEditTestCase(bug.testId)}>Edit Test Case</button>
-      )}
+      <div className="mt-4">
+        <div className="d-flex flex-wrap gap-2">
+          <button className="btn btn-secondary" onClick={handleGoBack}>
+            Go Back
+          </button>
+          <button className="btn btn-primary" onClick={handleAddComment}>
+            Add Comment
+          </button>
+          {(isAdmin || isQualityAnalyst) && (
+            <button className="btn btn-success" onClick={handleAddTestCase}>
+              Add Test Case
+            </button>
+          )}
+          {(isAdmin || isDeveloper) && (
+            <button className="btn btn-info" onClick={handleLogTime}>
+              Log Time
+            </button>
+          )}
+          {(isAdmin || isAuthor || isAssignedToUser || isProductManager) && (
+            <button className="btn btn-warning" onClick={handleEditBug}>
+              Edit Bug
+            </button>
+          )}
+          <button className="btn btn-outline-primary" onClick={handleViewTestCases}>
+            View Test Cases
+          </button>
+          <button className="btn btn-outline-info" onClick={handleViewLogs}>
+            View Logs
+          </button>
+          {(isAdmin || isQualityAnalyst) && bug.testId && (
+            <button className="btn btn-outline-warning" onClick={() => handleEditTestCase(bug.testId)}>
+              Edit Test Case
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
+};
+
+BugDetails.propTypes = {
+  auth: PropTypes.shape({
+    token: PropTypes.string.isRequired,
+    role: PropTypes.array.isRequired,
+    name: PropTypes.string.isRequired,
+  }).isRequired,
+  showError: PropTypes.func.isRequired,
+  showSuccess: PropTypes.func.isRequired,
 };
 
 export default BugDetails;

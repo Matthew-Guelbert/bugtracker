@@ -1,4 +1,4 @@
-import React from 'react';
+import PropTypes from 'prop-types';
 import moment from 'moment';
 import { Link } from 'react-router-dom';
 
@@ -26,6 +26,19 @@ const UserListItem = ({ item, auth }) => {
       </div>
     </div>
   );
+};
+
+UserListItem.propTypes = {
+  item: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    givenName: PropTypes.string.isRequired,
+    familyName: PropTypes.string.isRequired,
+    role: PropTypes.string.isRequired,
+    createdOn: PropTypes.string.isRequired,
+  }).isRequired,
+  auth: PropTypes.shape({
+    role: PropTypes.array.isRequired,
+  }).isRequired,
 };
 
 export default UserListItem;

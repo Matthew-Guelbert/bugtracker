@@ -74,7 +74,7 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
         if (res.status === 200) {
           setProfile(res.data); // Set the profile data in context
           onLogin(res.data);
-          showSuccess(res.data.message);
+          // Only App.jsx will show the login toast
         }
       })
       .catch((err) => {

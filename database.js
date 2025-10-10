@@ -227,17 +227,39 @@ async function DeleteUser(id) {
 };
 
 // Bug functions
-async function GetAllBugs(){
+async function GetAllBugs(match = {}, sortOptions = {}, pageSize = 10, pageNumber = 1) {
   debugDb('GetAllBugs');
   try {
     const db = await connect();
-    const bugs = await db.collection("Bugs").find({}).toArray();
-    return bugs;
-  }catch (error){
+    pageNumber = parseInt(pageNumber) || 1;
+    pageSize = parseInt(pageSize) || 10;
+    const skip = (pageNumber - 1) * pageSize;
+    const limit = pageSize;
+
+    const pipeline = [
+      { $match: match },
+      ...Object.keys(sortOptions).length ? [{ $sort: sortOptions }] : [],
+      { $skip: skip },
+      { $limit: limit }
+    ];
+
+    const cursor = db.collection('Bugs').aggregate(pipeline);
+    const bugs = await cursor.toArray();
+    const totalBugs = await db.collection('Bugs').countDocuments(match);
+    const totalPages = Math.ceil(totalBugs / pageSize);
+
+    return {
+      bugs,
+      totalBugs,
+      totalPages,
+      currentPage: pageNumber,
+      pageSize: pageSize
+    };
+  } catch (error) {
     console.error(`Error in GetAllBugs: ${error.message}`);
     throw new Error('Error retrieving bugs');
   }
-};
+}
 
 async function GetBugById(id){
   try{

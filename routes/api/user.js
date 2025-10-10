@@ -129,7 +129,7 @@ router.patch('/me', isLoggedIn(), async (req, res) => {
 });
 
 // Get all Users 
-router.get('', hasPermission('canViewData'), async (req, res) => {
+router.get('', isLoggedIn(), async (req, res) => {
   const { keywords, role, maxAge, minAge, pageSize, pageNumber, sortBy } = req.query;
 
   try {
@@ -161,7 +161,7 @@ router.get('', hasPermission('canViewData'), async (req, res) => {
 });
 
 //Get User by ID
-router.get("/:userId", hasPermission('canViewData'), validId('userId'), async (req, res) => {
+router.get("/:userId", isLoggedIn(), validId('userId'), async (req, res) => {
   const userId = req.params.userId;
   debugUser(`GET /api/users/${userId} - Request received`);
 

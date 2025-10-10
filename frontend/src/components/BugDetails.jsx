@@ -39,7 +39,7 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
   }, [bugId, auth?.token, showError, showSuccess]);
 
   const handleGoBack = useCallback(() => {
-    navigate(-1);
+    navigate('/bugs');
   }, [navigate]);
 
   const handleAddComment = useCallback(() => {

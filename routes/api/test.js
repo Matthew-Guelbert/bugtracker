@@ -17,7 +17,7 @@ import { testSchema, testUpdateSchema, testIdSchema } from '../../schema/testSch
 // API routes
 
 // List all tests for a specific bug
-router.get('/:bugId/tests', hasPermission('canViewData'), validId('bugId'), async (req, res) => {
+router.get('/:bugId/tests', isLoggedIn(), validId('bugId'), async (req, res) => {
   const bugId = req.bugId; // Use validId middleware to set req.bugId
   const auth = req.auth;
 
@@ -39,7 +39,7 @@ router.get('/:bugId/tests', hasPermission('canViewData'), validId('bugId'), asyn
 });
 
 // Get a single test by ID
-router.get('/:bugId/tests/:testId', hasPermission('canViewData'), validId('testId'), async (req, res) => {
+router.get('/:bugId/tests/:testId', isLoggedIn(), validId('testId'), async (req, res) => {
   const testId = req.testId;
 
   try {

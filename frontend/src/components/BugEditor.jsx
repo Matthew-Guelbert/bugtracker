@@ -102,11 +102,11 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
       const token = localStorage.getItem('authToken');
       const updateRequests = [];
 
-      if (touchedFields.title || touchedFields.description) {
+      if (touchedFields.title || touchedFields.description || touchedFields.stepsToReproduce) {
         updateRequests.push(
           axios.patch(
             `/api/bugs/${bugId}`,
-            { title, description },
+            { title, description, stepsToReproduce: bug?.stepsToReproduce || '' },
             { headers: { Authorization: `Bearer ${token}` } }
           )
         );

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { isTokenExpired } from './utils/auth';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -38,7 +39,7 @@ const App = () => {
   const { setProfile } = useUserProfile();
 
   useEffect(() => {
-    // Set up axios interceptor to automatically add the Authorization header
+    // Set up axios interceptor to automatically add the Authorization header and handle 401 globally
     const interceptor = axios.interceptors.request.use(
       (config) => {
         const token = localStorage.getItem('authToken');
@@ -47,27 +48,56 @@ const App = () => {
         }
         return config;
       },
+      (error) => Promise.reject(error)
+    );
+
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
       (error) => {
-        // Handle errors globally
-        console.error('Error in Axios interceptor:', error);
+        if (error.response && error.response.status === 401) {
+          // Token expired or invalid, force logout
+          setAuth(null);
+          setProfile(null);
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          navigate('/login');
+          toast('Session expired. Please log in again.', { type: 'error', position: 'bottom-right' });
+        }
         return Promise.reject(error);
       }
     );
 
-    // Initialize auth state from localStorage
-    const initializeAuth = () => {
+    // Initialize auth state from localStorage and refresh profile from backend if token is valid
+    const initializeAuth = async () => {
       const token = localStorage.getItem('authToken');
       const userString = localStorage.getItem('user');
-      
       if (token && userString) {
+        if (isTokenExpired(token)) {
+          setAuth(null);
+          setProfile(null);
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          setIsInitialized(true);
+          return;
+        }
         try {
           const user = JSON.parse(userString);
           const authData = { token, ...user };
           setAuth(authData);
           setProfile(authData);
+          // Try to refresh profile from backend
+          try {
+            const res = await axios.get('/api/users/me', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setProfile({ ...authData, ...res.data });
+          } catch (err) {
+            // If 401, response interceptor will handle logout
+            // Otherwise, just use local profile
+          }
         } catch (error) {
-          console.error('Error parsing user data from localStorage:', error);
-          // Clear invalid data
+          setAuth(null);
+          setProfile(null);
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
         }
@@ -80,8 +110,9 @@ const App = () => {
     // Clean up on unmount
     return () => {
       axios.interceptors.request.eject(interceptor);
+      axios.interceptors.response.eject(responseInterceptor);
     };
-  }, [setProfile]);
+  }, [setProfile, navigate]);
 
   const showError = useCallback((message) => {
     toast(message, { type: 'error', position: 'bottom-right' });

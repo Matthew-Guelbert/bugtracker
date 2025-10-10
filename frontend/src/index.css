@@ -2,23 +2,41 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* JIRA-inspired color palette */
+  --color-primary: #0052cc;
+  --color-primary-hover: #0747a6;
+  --color-accent: #2684ff;
+  --color-accent-hover: #4c9aff;
+  --color-success: #36b37e;
+  --color-warning: #ffab00;
+  --color-danger: #ff5630;
+  --color-info: #00b8d9;
+  --color-background: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-border: #dfe1e6;
+  --color-text: #172b4d;
+  --color-muted: #6b778c;
+  --color-gradient: linear-gradient(90deg, #0052cc 0%, #2684ff 100%);
+  --color-gradient-accent: linear-gradient(90deg, #36b37e 0%, #00b8d9 100%);
+  --color-gradient-danger: linear-gradient(90deg, #ff5630 0%, #ffab00 100%);
+  --color-gradient-warning: linear-gradient(90deg, #ffab00 0%, #ff5630 100%);
+  --color-gradient-success: linear-gradient(90deg, #36b37e 0%, #4c9aff 100%);
 }
 
-a {
+a:hover {
   font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   color: #646cff;
   text-decoration: inherit;
 }
-a:hover {
   color: #535bf2;
 }
 
@@ -42,7 +60,6 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
 }
@@ -61,8 +78,26 @@ button:focus-visible {
   }
   a:hover {
     color: #747bff;
+}
+
+button, .btn, .gradient-btn {
+  border-radius: 8px;
+  border: none;
+  padding: 0.6em 1.5em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background: var(--color-gradient);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px 0 rgba(38,132,255,0.08);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+button:hover, .btn:hover, .gradient-btn:hover {
+  background: var(--color-primary-hover);
+  color: #fff;
+  box-shadow: 0 4px 16px 0 rgba(38,132,255,0.16);
+  transform: translateY(-2px) scale(1.03);
   }
-  button {
-    background-color: #f9f9f9;
-  }
+  /* Removed background-color override for button to allow gradient backgrounds */
 }

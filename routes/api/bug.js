@@ -14,7 +14,7 @@ import { bugSchema, bugIdSchema, bugUpdateSchema, classifyBugSchema, assignBugSc
 import { commentSchema } from '../../schema/commentSchema.js';
 
 // List all bugs
-router.get('', hasPermission('canViewData'), async (req, res) => {
+router.get('', isLoggedIn(), async (req, res) => {
   let { keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber } = req.query;
   const match = {};
   const sortOptions = getSortOptions(sortBy, 'bug');
@@ -68,7 +68,7 @@ router.get('', hasPermission('canViewData'), async (req, res) => {
 });
 
 // Get a bug by ID
-router.get("/:bugId", hasPermission('canViewData'), validId('bugId'), async (req, res) => {
+router.get("/:bugId", isLoggedIn(), validId('bugId'), async (req, res) => {
   const { bugId } = req.params;
   const token = req.cookies.token;
   debugBug('bugId = ' + bugId);

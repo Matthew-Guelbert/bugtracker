@@ -1,20 +1,23 @@
+
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #5B6D92;
+  background: var(--color-background);
 }
+
 
 .login-box {
   max-width: 400px;
   width: 100%;
   margin: 0 auto;
-  background-color: #FFF;
+  background: var(--color-surface);
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(23,43,77,0.08);
   animation: fadeIn 0.5s ease-out;
+  border: 1px solid var(--color-border);
 }
 
 @keyframes fadeIn {
@@ -28,12 +31,13 @@
   }
 }
 
+
 .login-title {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 1.5rem;
   text-align: center;
-  color: #364042;
+  color: var(--color-primary);
 }
 
 .login-form {
@@ -43,39 +47,51 @@
 }
 
 /* Input group styling for unified focus state */
+
 .input-group-text {
   border-radius: 4px 0 0 4px;
-  background-color: #f8f9fa;
-  border: 1px solid #D18266;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
   height: 42px;
   display: flex;
   align-items: center;
+  color: var(--color-muted);
 }
 
 /* Apply focus styling to both icon and input */
-.input-group:focus-within .input-group-text {
-  border-color: #fd7e14;
-  box-shadow: 0 0 0 0.25rem rgba(253, 126, 20, 0.25);
-}
 
+
+/* Highlight the entire input group (icon + input) on focus */
+.input-group:focus-within {
+  box-shadow: 0 0 0 0.25rem rgba(38, 132, 255, 0.15);
+  border-radius: 6px;
+}
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control {
+  border-color: var(--color-accent);
+}
 .input-group .form-control:focus {
   box-shadow: none;
-  border-color: #fd7e14;
 }
 
 /* Ensure input has consistent border */
+
 .input-group .form-control {
-  border: 1px solid #D18266;
+  border: 1px solid var(--color-border);
   border-radius: 0 4px 4px 0;
+  background: #fff;
+  color: var(--color-text);
 }
 
 /* Handle invalid state for the icon span */
+
 .input-group:has(.form-control.is-invalid) .input-group-text {
-  border-color: #dc3545;
+  border-color: var(--color-danger);
 }
 
+
 .input-icon {
-  color: #D18266;
+  color: var(--color-accent);
 }
 
 .text-primary {

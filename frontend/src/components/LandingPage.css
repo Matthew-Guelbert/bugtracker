@@ -1,21 +1,30 @@
+
 .landing-page {
   padding: 20px;
   text-align: center;
+  background: var(--color-background);
+  color: var(--color-text);
 }
+
 
 .landing-header h1 {
   font-size: 2.5rem;
   margin-bottom: 10px;
+  color: var(--color-primary);
 }
+
 
 .landing-header h2 {
   font-size: 2rem;
   margin-bottom: 20px;
+  color: var(--color-accent);
 }
+
 
 .landing-header p {
   font-size: 1.2rem;
   margin-bottom: 30px;
+  color: var(--color-muted);
 }
 
 .landing-actions {
@@ -24,15 +33,34 @@
   gap: 15px;
 }
 
-.cta-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
 
-.cta-button:hover {
-  background-color: #0056b3;
+
+.btn-gradient-primary, .cta-button {
+  padding: 10px 24px;
+  font-size: 1.1rem;
+  background: var(--color-gradient) !important;
+  color: #fff !important;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(38,132,255,0.08);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+.btn-gradient-primary:hover, .cta-button:hover {
+  background: var(--color-primary-hover) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px rgba(38,132,255,0.16);
+  transform: translateY(-2px) scale(1.03);
+}
+.btn-gradient-outline {
+  padding: 10px 24px;
+  font-size: 1.1rem;
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-accent);
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-gradient-outline:hover {
+  background: var(--color-gradient);
+  color: #fff;
 }

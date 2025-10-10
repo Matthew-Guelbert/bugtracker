@@ -18,7 +18,7 @@ const AddComment = ({ auth, showError, showSuccess }) => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setBugTitle(response.data.bug.title); // Set the bug's title here
+  setBugTitle(response.data.title); // Set the bug's title here
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'Failed to load bug details';
         showError(errorMessage);
@@ -39,7 +39,7 @@ const AddComment = ({ auth, showError, showSuccess }) => {
       setLoading(true);
       const token = localStorage.getItem('authToken');
       const response = await axios.post(
-        `/api/bugs/${bugId}/comments`,
+        `http://localhost:5000/api/bugs/${bugId}/comments`,
         { text: commentText },
         {
           headers: {

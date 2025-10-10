@@ -1,20 +1,32 @@
+
 .register-container{
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #5B6D92
+  background: var(--color-background);
 }
 
+
 .register-box{
-  max-width: 400px;
+  max-width: 420px;
   width: 100%;
   margin: 0 auto;
-  background-color: #FFF;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  padding: 2.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(23,43,77,0.08);
   animation: fadeIn .5s ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid var(--color-border);
+}
+
+.register-form .form-control {
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @keyframes fadeIn {
@@ -28,12 +40,13 @@
   }
 }
 
+
 .register-title{
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 1.5rem;
   text-align: center;
-  color: #364042
+  color: var(--color-primary);
 }
 
 .register-form{
@@ -42,19 +55,24 @@
   gap: 1rem;
 }
 
+
 #password, #email, #emailConfirm, #givenName, #familyName, #passwordConfirm{
-  padding: .5rem; /* Keep padding minimal to avoid misalignment */
-  border: 1px solid #D18266;
-  border-radius: 0 4px 4px 0; /* Align corners properly with input-group-text */
+  padding: .5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0 4px 4px 0;
   font-size: 1rem;
   transition: border-color .3s ease;
-  width: auto; /* Let Bootstrap handle width for form-control */
+  width: auto;
+  background: #fff;
+  color: var(--color-text);
 }
 
+
 .input-group-text {
-  border-radius: 4px 0 0 4px; /* Match the rounded corners of the form-control */
-  background-color: #f8f9fa; /* Optional: customize background */
-  border: 1px solid #D18266; /* Ensure consistent border with form-control */
+  border-radius: 4px 0 0 4px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
 }
 
 .input-group {
@@ -67,8 +85,9 @@
 }
 
 
+
 .input-icon{
-  color: #D18266
+  color: var(--color-accent);
 }
 
 .text-primary{

@@ -17,7 +17,7 @@ import { commentSchema } from '../../schema/commentSchema.js';
 // API routes
 
 // List all comments for a specific bug
-router.get('/:bugId/comments', hasPermission('canViewData'), validId('bugId'), async (req, res) => {
+router.get('/:bugId/comments', isLoggedIn(), validId('bugId'), async (req, res) => {
   const bugId = req.bugId;
   const auth = req.auth;
 
@@ -40,7 +40,7 @@ router.get('/:bugId/comments', hasPermission('canViewData'), validId('bugId'), a
 });
 
 // Get a single comment by ID
-router.get('/:bugId/comments/:commentId', hasPermission('canViewData'), validId('bugId'), validId('commentId'), async (req, res) => {
+router.get('/:bugId/comments/:commentId', isLoggedIn(), validId('bugId'), validId('commentId'), async (req, res) => {
   const bugId = req.bugId;
   const commentId = req.commentId;
 
@@ -65,7 +65,7 @@ router.get('/:bugId/comments/:commentId', hasPermission('canViewData'), validId(
 
 
 // Add a new comment to a bug
-router.post('/:bugId/comments', hasPermission('canViewData'), validId('bugId'), validBody(commentSchema), async (req, res) => {
+router.post('/:bugId/comments', isLoggedIn(), validId('bugId'), validBody(commentSchema), async (req, res) => {
   const bugId = req.bugId;
   const auth = req.auth;
   const { text } = req.body;

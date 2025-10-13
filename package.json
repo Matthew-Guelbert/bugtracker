@@ -5,7 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --forceExit",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch --forceExit",
     "start": "node index.js",
     "start-dev": "nodemon -r dotenv/config index.js"
   },
@@ -31,5 +32,12 @@
     "nanoid": "^5.0.7",
     "nanoid-dictionary": "^4.3.0",
     "nodemon": "^3.1.4"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4",
+    "mongodb-memory-server": "^9.1.1",
+    "@babel/preset-env": "^7.23.6",
+    "@babel/core": "^7.23.6"
   }
 }

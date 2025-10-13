@@ -41,7 +41,15 @@ const LandingPage = () => {
               Track, report, and resolve bugs efficiently. Stay on top of your team&apos;s progress and collaborate seamlessly.
             </p>
             <div className="d-flex flex-column flex-md-row justify-content-center align-items-center gap-3 mb-3">
-              <button className="btn-gradient-primary btn-lg shadow px-4" onClick={() => navigate('/bugs')}>
+              <button 
+                className="btn-gradient-primary btn-lg shadow px-4" 
+                onClick={() => navigate('/bugs')}
+                style={{ 
+                  background: 'linear-gradient(90deg, #0052cc 0%, #2684ff 100%)', 
+                  color: '#fff', 
+                  border: 'none' 
+                }}
+              >
                 <i className="bi bi-bug-fill me-2"></i>View All Bugs
               </button>
               <button className="btn-gradient-outline btn-lg shadow px-4" onClick={() => navigate('/my-bugs')}>

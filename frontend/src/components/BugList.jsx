@@ -198,8 +198,13 @@ const BugList = ({ auth, showError, showSuccess }) => {
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
         <h2 className="fw-bold mb-0">Bug Tracker</h2>
         <button
-          className="btn btn-lg btn-gradient-primary px-4 shadow"
+          className="btn-gradient-primary btn-lg px-4 shadow"
           onClick={handleReportBug}
+          style={{ 
+            background: 'linear-gradient(90deg, #0052cc 0%, #2684ff 100%)', 
+            color: '#fff', 
+            border: 'none' 
+          }}
         >
           <i className="bi bi-plus-circle me-2"></i>Report Bug
         </button>

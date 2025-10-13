@@ -40,7 +40,7 @@ const AddBug = ({ auth, showError, showSuccess }) => {
     setError(null); // Clear previous errors
 
     try {
-      await axios.post('http://localhost:5000/api/bugs', {
+      await axios.post('/api/bugs', {
         ...bug,
         author: auth.name, // Use auth.name as required by schema
       }, {

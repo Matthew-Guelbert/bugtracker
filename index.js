@@ -16,9 +16,10 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: ['http://localhost:5173', 'http://localhost:5174'], // Support both Vite ports
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }
 
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies to req.body
@@ -32,6 +33,8 @@ app.use(cookieParser());
 app.use(authMiddleware(process.env.JWT_SECRET, 'authToken', {
   httpOnly: true,
   maxAge: 1000 * 60 * 60,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production'
 }));
 
 import { userRouter } from './routes/api/user.js';
@@ -39,22 +42,19 @@ import { bugRouter } from './routes/api/bug.js';
 import { commentRouter } from './routes/api/comment.js';
 import { testRouter } from './routes/api/test.js';
 
-app.listen(port, () => {
-  debugServer(`Server is running on port http://localhost:${port}`);
-})
-
 app.get('/', (req, res) => {
   res.send('Hello World TEST TEST TEST!');
 });
 
-// Catch-all route to serve index.html in the /frontend/dist folder for React Router
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
+// API routes
 app.use('/api/users', userRouter);
 app.use('/api/bugs', bugRouter);
 app.use('/api/bugs', commentRouter);
 app.use('/api/bugs', testRouter);
+
+// Catch-all route to serve index.html in the /frontend/dist folder for React Router
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'frontend', 'dist', 'index.html'));
@@ -64,3 +64,13 @@ app.get('*', (req, res) => {
 app.use((err, req, res, next) => {
   res.status(err.status).json({ error: err.message});
 });
+
+// Start the server AFTER all routes are defined (only if not in test environment)
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(port, () => {
+    debugServer(`Server is running on port http://localhost:${port}`);
+  });
+}
+
+// Export the app for testing
+export default app;

@@ -13,6 +13,7 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
   const [password, setPassword] = useState('');
   const [isEmailValid, setEmailValid] = useState(true);
   const [isPasswordValid, setPasswordValid] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const { setProfile } = useUserProfile();
 
   useEffect(() => {
@@ -63,7 +64,7 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
     // Send POST request if inputs are valid
     axios
       .post(
-        'http://localhost:5000/api/users/login',
+        '/api/users/login',
         { email, password },
         {
           withCredentials: true,
@@ -134,7 +135,7 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
                   <i className="bi bi-lock-fill text-muted"></i>
                 </span>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   className={`form-control ${
                     isPasswordValid ? '' : 'is-invalid'
                   }`}
@@ -145,6 +146,14 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ borderLeft: 'none' }}
+                >
+                  <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+                </button>
                 <div className="invalid-feedback">
                   Please enter a valid password with a minimum of 6 characters.
                 </div>

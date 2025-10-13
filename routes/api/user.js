@@ -32,9 +32,9 @@ async function issueAuthCookie(res, token, userId){
   const cookieOptions = { 
     httpOnly: true, 
     maxAge: 1000*60*60, 
-    sameSite: 'strict', 
-    secure: true
-  } // 1000*60*60 = 1 hour, sameSite is for only my domain, single site. 
+    sameSite: 'lax', // Changed from 'strict' to 'lax' for cross-origin requests
+    secure: process.env.NODE_ENV === 'production' // Only secure in production
+  } // 1000*60*60 = 1 hour
   res.cookie('authToken', token, cookieOptions);
 }
 

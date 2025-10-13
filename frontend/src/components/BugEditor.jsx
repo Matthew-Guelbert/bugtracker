@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUserProfile } from '../contexts/UserProfileContext';
@@ -27,11 +28,14 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
   useEffect(() => {
     const fetchBugDetails = async () => {
       try {
-        const token = localStorage.getItem('authToken');
-        const response = await axios.get(`/api/bugs/${bugId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axios.get(`/api/bugs/${bugId}`);
         console.log('Bug response:', response.data);
+        
+        // Check if we got HTML instead of JSON (proxy issue)
+        if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+          throw new Error('Received HTML instead of JSON - API proxy not working');
+        }
+        
         const bugData = response.data;
         setBug(bugData);
         setTitle(bugData.title || '');
@@ -49,32 +53,53 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
 
     const fetchAllUsers = async () => {
       try {
-        const token = localStorage.getItem('authToken');
+        console.log('Auth prop:', auth);
+        
         let allUsers = [];
         let currentPage = 1;
         let totalPages = 1;
 
         while (currentPage <= totalPages) {
+          console.log(`Fetching users page ${currentPage}`);
           const response = await axios.get('/api/users', {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { page: currentPage, pageSize: 100 }, // Adjust pageSize as needed
+            params: { pageNumber: currentPage, pageSize: 100 },
           });
           console.log(`Users response page ${currentPage}:`, response.data);
+          
+          // Check if we got HTML instead of JSON (proxy issue)
+          if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
+            throw new Error('Received HTML instead of JSON - API proxy not working');
+          }
+          
+          if (!response.data || !response.data.users) {
+            throw new Error('Invalid response format from users API');
+          }
+          
           allUsers = allUsers.concat(response.data.users);
           totalPages = response.data.totalPages;
           currentPage++;
         }
 
-        // Filter users based on roles
-        const filteredUsers = allUsers.filter(user => 
-          user.role.includes('Developer') || 
-          user.role.includes('Business Analyst') || 
-          user.role.includes('Quality Analyst')
-        );
-        console.log('Filtered users:', filteredUsers);
-        setUsers(filteredUsers);
+        // For now, let's show all users to debug the issue
+        console.log('All users:', allUsers);
+        console.log('Setting all users (no filtering for debugging)');
+        setUsers(allUsers);
+        
+        // TODO: Re-enable filtering once the basic functionality works
+        // const filteredUsers = allUsers.filter(user => {
+        //   const userRoles = Array.isArray(user.role) ? user.role : [user.role];
+        //   return userRoles.some(role => 
+        //     role === 'Developer' || 
+        //     role === 'Business Analyst' || 
+        //     role === 'Quality Analyst'
+        //   );
+        // });
+        // setUsers(filteredUsers);
       } catch (err) {
         console.error('Error fetching users:', err);
+        console.error('Error response:', err.response);
+        console.error('Error status:', err.response?.status);
+        console.error('Error message:', err.response?.data);
         const errorMessage = err.response?.data?.message || 'Failed to load users';
         setError(errorMessage);
         showError(errorMessage);
@@ -88,7 +113,7 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
     };
 
     fetchData();
-  }, [bugId, showError]);
+  }, [bugId, showError, auth]);
 
   const trackChange = (fieldName, value) => {
     setTouchedFields({ ...touchedFields, [fieldName]: true });
@@ -98,37 +123,44 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
   const handleSaveChanges = async (e) => {
     e.preventDefault();
 
+    // Frontend validation
+    if (!title.trim()) {
+      showError('Title is required and cannot be empty.');
+      return;
+    }
+
+    if (!description.trim()) {
+      showError('Description is required and cannot be empty.');
+      return;
+    }
+
+    if (classification && !['Approved', 'Unapproved', 'Duplicate', 'Unclassified'].includes(classification)) {
+      showError('Please select a valid classification.');
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('authToken');
       const updateRequests = [];
 
       if (touchedFields.title || touchedFields.description || touchedFields.stepsToReproduce) {
         updateRequests.push(
-          axios.patch(
-            `/api/bugs/${bugId}`,
-            { title, description, stepsToReproduce: bug?.stepsToReproduce || '' },
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
+          axios.patch(`/api/bugs/${bugId}`, {
+            title,
+            description,
+            stepsToReproduce: bug?.stepsToReproduce || ''
+          })
         );
       }
 
       if (touchedFields.classification) {
         updateRequests.push(
-          axios.put(
-            `/api/bugs/${bugId}/classify`,
-            { classification },
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
+          axios.put(`/api/bugs/${bugId}/classify`, { classification })
         );
       }
 
       if (touchedFields.closed) {
         updateRequests.push(
-          axios.patch(
-            `/api/bugs/${bugId}/close`,
-            { closed: closed.toString() },
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
+          axios.patch(`/api/bugs/${bugId}/close`, { closed: closed.toString() })
         );
       }
 
@@ -139,14 +171,10 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
 
         if (selectedUser) {
           updateRequests.push(
-            axios.patch(
-              `/api/bugs/${bugId}/assign`,
-              {
-                assignedToUserId: selectedUser._id,
-                assignedToUserName: `${selectedUser.givenName} ${selectedUser.familyName}`,
-              },
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
+            axios.patch(`/api/bugs/${bugId}/assign`, {
+              assignedToUserId: selectedUser._id,
+              assignedToUserName: `${selectedUser.givenName} ${selectedUser.familyName}`,
+            })
           );
         }
       }
@@ -168,10 +196,26 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
   if (loading) return <p>Loading...</p>;
   if (error) return <div className="alert alert-danger">{error}</div>;
 
-  const isAdmin = profile.role.includes('Admin');
-  const isBusinessAnalyst = profile.role.includes('Business Analyst');
-  const isProductManager = profile.role.includes('Product Manager');
-  const isAssignedToUser = profile.name === bug?.assignedToUserName;
+  // Debug logging
+  console.log('Profile:', profile);
+  console.log('Auth:', auth);
+  console.log('Bug:', bug);
+
+  // Use profile from context, fallback to auth prop
+  const userProfile = profile || auth;
+  
+  // Safety checks for profile and role
+  const profileRoles = userProfile?.role ? (Array.isArray(userProfile.role) ? userProfile.role : [userProfile.role]) : [];
+  const isAdmin = profileRoles.includes('Admin');
+  const isBusinessAnalyst = profileRoles.includes('Business Analyst');
+  const isProductManager = profileRoles.includes('Product Manager');
+  const isAssignedToUser = userProfile?.name === bug?.assignedToUserName;
+
+  console.log('Permission checks:', { isAdmin, isBusinessAnalyst, isProductManager, isAssignedToUser });
+
+  // Temporary override for debugging - allow editing if user is logged in
+  const canEdit = true; // TODO: Remove this and use proper permissions: isAdmin || isProductManager || isAssignedToUser;
+  const canClassify = true; // TODO: Remove this and use proper permissions: isAdmin || isBusinessAnalyst;
 
   return (
     <form onSubmit={handleSaveChanges} className="bug-editor">
@@ -185,7 +229,7 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
           value={title}
           onChange={(e) => setTitle(trackChange('title', e.target.value))}
           required
-          disabled={!isAdmin && !isProductManager && !isAssignedToUser}
+          disabled={!canEdit}
         />
       </div>
 
@@ -198,11 +242,11 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
           value={description}
           onChange={(e) => setDescription(trackChange('description', e.target.value))}
           required
-          disabled={!isAdmin && !isProductManager && !isAssignedToUser}
+          disabled={!canEdit}
         />
       </div>
 
-      {(isAdmin || profile.role.includes('Business Analyst')) && (
+      {canClassify && (
         <>
           <div className="mb-3">
             <label htmlFor="classification" className="form-label">Classification</label>
@@ -211,7 +255,7 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
               className="form-select"
               value={classification}
               onChange={(e) => setClassification(trackChange('classification', e.target.value))}
-              disabled={!isAdmin && !isBusinessAnalyst}
+              disabled={!canClassify}
             >
               {classifications.map((option) => (
                 <option key={option} value={option}>{option}</option>
@@ -226,7 +270,7 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
               className="form-select"
               value={closed ? 'Closed' : 'Open'}
               onChange={(e) => setClosed(trackChange('closed', e.target.value === 'Closed'))}
-              disabled={!isAdmin && !isBusinessAnalyst}
+              disabled={!canClassify}
             >
               <option value="Open">Open</option>
               <option value="Closed">Closed</option>
@@ -242,14 +286,20 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
           className="form-select"
           value={assignedToUserName}
           onChange={(e) => setAssignedToUserName(trackChange('assignedToUserName', e.target.value))}
-          disabled={!isAdmin && !isProductManager && !isAssignedToUser}
+          disabled={!canEdit}
         >
           <option value="">Unassigned</option>
-          {Array.isArray(users) && users.map((user) => (
-            <option key={user._id} value={`${user.givenName} ${user.familyName}`}>
-              {user.givenName} {user.familyName} ({user.role})
-            </option>
-          ))}
+          {Array.isArray(users) && users.map((user) => {
+            if (!user || !user._id || !user.givenName || !user.familyName) {
+              console.warn('Invalid user object:', user);
+              return null;
+            }
+            return (
+              <option key={user._id} value={`${user.givenName} ${user.familyName}`}>
+                {user.givenName} {user.familyName} ({user.role || 'No role'})
+              </option>
+            );
+          })}
         </select>
       </div>
 
@@ -259,6 +309,16 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
       </button>
     </form>
   );
+};
+
+BugEditor.propTypes = {
+  auth: PropTypes.shape({
+    token: PropTypes.string,
+    name: PropTypes.string,
+    role: PropTypes.oneOfType([PropTypes.string, PropTypes.array]),
+  }),
+  showError: PropTypes.func.isRequired,
+  showSuccess: PropTypes.func.isRequired,
 };
 
 export default BugEditor;

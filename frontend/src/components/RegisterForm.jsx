@@ -11,6 +11,8 @@ const RegisterForm = ({ showError, showSuccess }) => {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [givenName, setGivenName] = useState('');
   const [familyName, setFamilyName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   // Removed unused success and error state
 
   const navigate = useNavigate();
@@ -69,7 +71,7 @@ const RegisterForm = ({ showError, showSuccess }) => {
     }
   
     try {
-      const response = await axios.post('http://localhost:5000/api/users/register', {
+      const response = await axios.post('/api/users/register', {
         email,
         password,
         givenName,
@@ -101,34 +103,34 @@ const RegisterForm = ({ showError, showSuccess }) => {
           noValidate
           onSubmit={handleSubmit}
         >
-          {/* Given Name */}
+          {/* First Name */}
           <div className="mb-3 position-relative">
             <i className="bi bi-person position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style={{ pointerEvents: 'none', fontSize: '1.1rem' }}></i>
             <input
               type="text"
               id="givenName"
               className="form-control ps-5"
-              placeholder="Given Name"
+              placeholder="First Name"
               value={givenName}
               onChange={(e) => setGivenName(e.target.value)}
               required
             />
-            <div className="invalid-feedback">Please enter your given name.</div>
+            <div className="invalid-feedback">Please enter your first name.</div>
           </div>
 
-          {/* Family Name */}
+          {/* Last Name */}
           <div className="mb-3 position-relative">
             <i className="bi bi-person position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style={{ pointerEvents: 'none', fontSize: '1.1rem' }}></i>
             <input
               type="text"
               id="familyName"
               className="form-control ps-5"
-              placeholder="Family Name"
+              placeholder="Last Name"
               value={familyName}
               onChange={(e) => setFamilyName(e.target.value)}
               required
             />
-            <div className="invalid-feedback">Please enter your family name.</div>
+            <div className="invalid-feedback">Please enter your last name.</div>
           </div>
 
           {/* Email */}
@@ -162,33 +164,55 @@ const RegisterForm = ({ showError, showSuccess }) => {
           </div>
 
           {/* Password */}
-          <div className="mb-3 position-relative">
-            <i className="bi bi-lock position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style={{ pointerEvents: 'none', fontSize: '1.1rem' }}></i>
-            <input
-              type="password"
-              id="password"
-              className="form-control ps-5"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength="6"
-            />
+          <div className="mb-3">
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-lock text-muted"></i>
+              </span>
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                className="form-control"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength="6"
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+              </button>
+            </div>
             <div className="invalid-feedback">Please enter a password with at least 6 characters.</div>
           </div>
 
           {/* Confirm Password */}
-          <div className="mb-3 position-relative">
-            <i className="bi bi-lock-fill position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" style={{ pointerEvents: 'none', fontSize: '1.1rem' }}></i>
-            <input
-              type="password"
-              id="passwordConfirm"
-              className="form-control ps-5"
-              placeholder="Confirm Password"
-              value={passwordConfirm}
-              onChange={(e) => setPasswordConfirm(e.target.value)}
-              required
-            />
+          <div className="mb-3">
+            <div className="input-group">
+              <span className="input-group-text">
+                <i className="bi bi-lock-fill text-muted"></i>
+              </span>
+              <input
+                type={showPasswordConfirm ? "text" : "password"}
+                id="passwordConfirm"
+                className="form-control"
+                placeholder="Confirm Password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+              >
+                <i className={`bi ${showPasswordConfirm ? 'bi-eye-slash' : 'bi-eye'}`}></i>
+              </button>
+            </div>
             <div className="invalid-feedback">Please confirm your password.</div>
           </div>
 

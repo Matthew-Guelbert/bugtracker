@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import moment from 'moment';
 
-const BugDetails = ({ auth, showError, showSuccess }) => {
+const BugDetails = ({ auth, showError }) => {
   const { bugId } = useParams();
   const navigate = useNavigate();
   const [bug, setBug] = useState(null);
@@ -21,7 +21,7 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
       }
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/bugs/${bugId}`, {
+        const response = await axios.get(`/api/bugs/${bugId}`, {
           headers: { Authorization: `Bearer ${auth.token}` },
         });
         setBug(response.data);
@@ -36,7 +36,7 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
     };
 
     fetchBugDetails();
-  }, [bugId, auth?.token, showError, showSuccess]);
+  }, [bugId, auth?.token, showError]);
 
   const handleGoBack = useCallback(() => {
     navigate('/bugs');
@@ -93,74 +93,80 @@ const BugDetails = ({ auth, showError, showSuccess }) => {
   const isAuthor = userName === (bug.author || bug.createdBy);
   const isAssignedToUser = userName === bug.assignedToUserName;
 
+  const classificationClass = {
+    Approved: 'badge badge-gradient badge-gradient-primary',
+    Unapproved: 'badge badge-gradient badge-gradient-danger',
+    Duplicate: 'badge badge-gradient badge-gradient-warning',
+  }[bug.classification] || 'badge badge-gradient badge-gradient-secondary';
+
   return (
-    <div className="bug-details">
-      <h2>{bug.title}</h2>
-      <p><strong>Description:</strong> {bug.description}</p>
-      <p><strong>Steps to Reproduce:</strong> {bug.stepsToReproduce}</p>
-      <p>
-        <strong>Classification:</strong>{' '}
-        <span className={`badge ${bug.classification === 'approved' ? 'bg-success' : 'bg-danger'}`}>
-          {bug.classification}
-        </span>
-      </p>
-      <p>
-        <strong>Status:</strong> 
-        <span className={`badge ${bug.closed ? 'bg-danger' : 'bg-success'}`}>
-          {bug.closed ? 'Closed' : 'Open'}
-        </span>
-      </p>
-      <p><strong>Created On:</strong> {moment(bug.createdOn).format('LL')}</p>
-      <p><strong>Created By:</strong> {bug.author || bug.createdBy}</p>
-      <div>
-        <h3>Comments</h3>
+    <div className="page-shell bug-details">
+      <div className="detail-shell">
+        <div className="page-header mb-3">
+          <h2 className="page-title">{bug.title}</h2>
+          <span className={bug.closed ? 'badge badge-gradient badge-gradient-danger' : 'badge badge-gradient badge-gradient-success'}>
+            {bug.closed ? 'Closed' : 'Open'}
+          </span>
+        </div>
+
+        <div className="detail-grid mb-3">
+          <div className="detail-item">
+            <span className="label">Classification</span>
+            <span className={classificationClass}>{bug.classification}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">Created On</span>
+            <span>{moment(bug.createdOn).format('LL')}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">Created By</span>
+            <span>{bug.author || bug.createdBy}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">Assigned To</span>
+            <span>{bug.assignedToUserName || 'Unassigned'}</span>
+          </div>
+        </div>
+
+        <div className="detail-item mb-3">
+          <span className="label">Description</span>
+          <p className="mb-0">{bug.description}</p>
+        </div>
+        <div className="detail-item mb-4">
+          <span className="label">Steps To Reproduce</span>
+          <p className="mb-0">{bug.stepsToReproduce}</p>
+        </div>
+
+        <h4 className="mb-3">Comments</h4>
         {bug.comments.length === 0 ? (
-          <p>No comments yet...</p>
+          <div className="empty-state">No comments yet.</div>
         ) : (
-          <ul className="list-group">
+          <ul className="list-group clean-list">
             {bug.comments.map((comment) => (
               <li key={comment._id} className="list-group-item">
-                <strong>{comment.author}:</strong> {comment.text}
-                <br />
-                <small>{moment(comment.createdOn).fromNow()}</small>
+                <p className="mb-1"><strong>{comment.author}</strong> {comment.text}</p>
+                <small className="text-muted">{moment(comment.createdOn).fromNow()}</small>
               </li>
             ))}
           </ul>
         )}
-      </div>
-      <div className="mt-4">
-        <div className="d-flex flex-wrap gap-2">
-          <button className="btn btn-secondary" onClick={handleGoBack}>
-            Go Back
-          </button>
-          <button className="btn btn-primary" onClick={handleAddComment}>
-            Add Comment
-          </button>
+
+        <div className="actions-row mt-4">
+          <button className="btn btn-secondary" onClick={handleGoBack}>Back</button>
+          <button className="btn btn-primary" onClick={handleAddComment}>Add Comment</button>
           {(isAdmin || isQualityAnalyst) && (
-            <button className="btn btn-success" onClick={handleAddTestCase}>
-              Add Test Case
-            </button>
+            <button className="btn btn-secondary" onClick={handleAddTestCase}>Add Test Case</button>
           )}
           {(isAdmin || isDeveloper) && (
-            <button className="btn btn-info" onClick={handleLogTime}>
-              Log Time
-            </button>
+            <button className="btn btn-secondary" onClick={handleLogTime}>Log Time</button>
           )}
           {(isAdmin || isAuthor || isAssignedToUser || isProductManager) && (
-            <button className="btn btn-warning" onClick={handleEditBug}>
-              Edit Bug
-            </button>
+            <button className="btn btn-secondary" onClick={handleEditBug}>Edit Bug</button>
           )}
-          <button className="btn btn-outline-primary" onClick={handleViewTestCases}>
-            View Test Cases
-          </button>
-          <button className="btn btn-outline-info" onClick={handleViewLogs}>
-            View Logs
-          </button>
+          <button className="btn btn-secondary" onClick={handleViewTestCases}>View Test Cases</button>
+          <button className="btn btn-secondary" onClick={handleViewLogs}>View Logs</button>
           {(isAdmin || isQualityAnalyst) && bug.testId && (
-            <button className="btn btn-outline-warning" onClick={() => handleEditTestCase(bug.testId)}>
-              Edit Test Case
-            </button>
+            <button className="btn btn-secondary" onClick={() => handleEditTestCase(bug.testId)}>Edit Test Case</button>
           )}
         </div>
       </div>
@@ -175,7 +181,6 @@ BugDetails.propTypes = {
     name: PropTypes.string.isRequired,
   }).isRequired,
   showError: PropTypes.func.isRequired,
-  showSuccess: PropTypes.func.isRequired,
 };
 
 export default BugDetails;

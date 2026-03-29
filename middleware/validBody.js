@@ -2,7 +2,6 @@ import Joi from 'joi';
 
 export const validBody = (schema) => {
   return (req, res, next) => {
-    console.log("Incoming body data:", req.body);  // Check the incoming data structure
     const { error } = schema.validate(req.body, { abortEarly: false });
 
     if (error) {

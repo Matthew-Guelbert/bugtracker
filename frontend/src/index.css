@@ -1,103 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@600;700&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* JIRA-inspired color palette */
-  --color-primary: #0052cc;
-  --color-primary-hover: #0747a6;
-  --color-accent: #2684ff;
-  --color-accent-hover: #4c9aff;
-  --color-success: #36b37e;
-  --color-warning: #ffab00;
-  --color-danger: #ff5630;
-  --color-info: #00b8d9;
-  --color-background: #f4f5f7;
-  --color-surface: #ffffff;
-  --color-border: #dfe1e6;
-  --color-text: #172b4d;
-  --color-muted: #6b778c;
-  --color-gradient: linear-gradient(90deg, #0052cc 0%, #2684ff 100%);
-  --color-gradient-accent: linear-gradient(90deg, #36b37e 0%, #00b8d9 100%);
-  --color-gradient-danger: linear-gradient(90deg, #ff5630 0%, #ffab00 100%);
-  --color-gradient-warning: linear-gradient(90deg, #ffab00 0%, #ff5630 100%);
-  --color-gradient-success: linear-gradient(90deg, #36b37e 0%, #4c9aff 100%);
+  --font-heading: 'Sora', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+
+  --bg-canvas: #f5f7fb;
+  --bg-surface: #ffffff;
+  --bg-soft: #eef2f8;
+  --text-main: #111827;
+  --text-muted: #5f6c84;
+  --border-soft: #dde4ef;
+  --line-subtle: rgba(148, 163, 184, 0.24);
+
+  --brand-600: #0f4c81;
+  --brand-500: #1768ac;
+  --brand-400: #3a86c6;
+  --accent-500: #1f8a70;
+  --danger-500: #c33f49;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 12px 30px rgba(17, 24, 39, 0.08);
+  --radius-md: 12px;
+  --radius-lg: 18px;
 }
 
-a:hover {
-  font-weight: 500;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #646cff;
-  text-decoration: inherit;
+* {
+  box-sizing: border-box;
 }
-  color: #535bf2;
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  width: 100%;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--text-main);
+  background:
+    radial-gradient(circle at 12% -10%, rgba(23, 104, 172, 0.12), transparent 32%),
+    radial-gradient(circle at 90% 2%, rgba(31, 138, 112, 0.12), transparent 28%),
+    var(--bg-canvas);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  color: #0b1220;
+  letter-spacing: -0.02em;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+a {
+  color: var(--brand-500);
+  text-decoration: none;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
+a:hover {
+  color: var(--brand-600);
 }
 
-button, .btn, .gradient-btn {
-  border-radius: 8px;
-  border: none;
-  padding: 0.6em 1.5em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background: var(--color-gradient);
-  color: #fff;
-  cursor: pointer;
-  box-shadow: 0 2px 8px 0 rgba(38,132,255,0.08);
-  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+.form-control,
+.form-select {
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: #fff;
 }
-button:hover, .btn:hover, .gradient-btn:hover {
-  background: var(--color-primary-hover);
-  color: #fff;
-  box-shadow: 0 4px 16px 0 rgba(38,132,255,0.16);
-  transform: translateY(-2px) scale(1.03);
-  }
-  /* Removed background-color override for button to allow gradient backgrounds */
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--brand-400);
+  box-shadow: 0 0 0 3px rgba(58, 134, 198, 0.16);
+}
+
+.card,
+.alert,
+.table,
+.dropdown-menu {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-subtle);
+  box-shadow: var(--shadow-sm);
 }

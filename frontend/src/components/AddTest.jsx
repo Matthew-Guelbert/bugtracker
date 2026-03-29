@@ -41,8 +41,11 @@ const AddTest = ({ auth, showError, showSuccess }) => {
   };
 
   return (
-    <div className="add-test">
-      <h2>Add Test</h2>
+    <div className="page-shell add-test">
+      <div className="form-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Add Test Case</h2>
+      </div>
       {error && <div className="alert alert-danger">{error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
@@ -85,10 +88,13 @@ const AddTest = ({ auth, showError, showSuccess }) => {
             <option value="Error">Error</option>
           </select>
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Adding...' : 'Add Test'}
-        </button>
+        <div className="form-actions mt-3">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Adding...' : 'Add Test'}
+          </button>
+        </div>
       </form>
+      </div>
     </div>
   );
 };

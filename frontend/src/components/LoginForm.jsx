@@ -3,12 +3,11 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
-import { toast } from 'react-toastify';
 import { Link } from 'react-router-dom';
 import { useUserProfile } from '../contexts/UserProfileContext';
 import './LoginForm.css';
 
-const LoginForm = ({ onLogin, showError, showSuccess }) => {
+const LoginForm = ({ onLogin, showError }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isEmailValid, setEmailValid] = useState(true);
@@ -83,24 +82,18 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
           const errorMessage =
             err.response.data.message || 'Invalid email or password';
           showError(errorMessage);
-          toast.error(errorMessage);
         } else {
           const genericError = 'An error occurred. Please try again.';
           showError(genericError);
-          toast.error(genericError);
         }
       });
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center min-vh-100 bg-light">
-      <div
-        className="card shadow-lg border-0"
-        style={{ maxWidth: '420px', width: '100%' }}
-      >
-        <div className="card-body p-5">
-          <h2 className="text-center mb-2 fw-bold">Welcome Back</h2>
-          <p className="text-center text-muted mb-4">Sign in to your account</p>
+    <div className="d-flex justify-content-center align-items-center min-vh-100 px-3">
+      <div className="auth-shell">
+          <h2 className="auth-title fw-bold">Welcome Back</h2>
+          <p className="auth-subtitle">Sign in to your account</p>
 
           <form className="needs-validation" noValidate onSubmit={handleSubmit}>
             <div className="mb-4">
@@ -150,7 +143,6 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
                   type="button"
                   className="btn btn-outline-secondary"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={{ borderLeft: 'none' }}
                 >
                   <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}></i>
                 </button>
@@ -176,7 +168,6 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
               </p>
             </div>
           </form>
-        </div>
       </div>
     </div>
   );
@@ -185,7 +176,6 @@ const LoginForm = ({ onLogin, showError, showSuccess }) => {
 LoginForm.propTypes = {
   onLogin: PropTypes.func.isRequired,
   showError: PropTypes.func.isRequired,
-  showSuccess: PropTypes.func.isRequired,
 };
 
 export default LoginForm;

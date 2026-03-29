@@ -5,31 +5,33 @@ import { Link } from 'react-router-dom';
 const MyBugListItem = ({ item }) => {
   // Determine badge styles based on classification
   const classificationBadgeClass = {
-    Approved: 'badge bg-success',
-    Unapproved: 'badge bg-danger',
-    Duplicate: 'badge bg-danger',
-    Unclassified: 'badge bg-warning',
-  }[item.classification] || 'badge bg-secondary';
+    Approved: 'badge badge-gradient badge-gradient-primary',
+    Unapproved: 'badge badge-gradient badge-gradient-danger',
+    Duplicate: 'badge badge-gradient badge-gradient-warning',
+    Unclassified: 'badge badge-gradient badge-gradient-light',
+  }[item.classification] || 'badge badge-gradient badge-gradient-secondary';
 
   // Determine status badge based on item.closed boolean
   const statusBadgeClass = item.closed 
-    ? 'badge bg-danger'  // If closed is true, display red badge
-    : 'badge bg-success'; // If closed is false, display green badge
+    ? 'badge badge-gradient badge-gradient-danger'
+    : 'badge badge-gradient badge-gradient-success';
 
   return (
-    <div className="card mb-3">
-      <div className="card-body">
-        <h5 className="card-title">{item.title}</h5>
-        <p>Assigned to: {item.assignedToUserName || 'Unassigned'}</p>
-        <p>
-          <span className={classificationBadgeClass}>{item.classification}</span>{' '}
-          <span className={statusBadgeClass}>{item.closed ? 'Closed' : 'Open'}</span>
-        </p>
+    <div className="card mb-3 entity-card">
+      <div className="card-body d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start align-items-md-center">
+        <div>
+          <h5 className="card-title mb-2">{item.title}</h5>
+          <p className="mb-2 text-muted">Assigned to: {item.assignedToUserName || 'Unassigned'}</p>
+          <p className="mb-0 d-flex gap-2 flex-wrap">
+            <span className={classificationBadgeClass}>{item.classification}</span>
+            <span className={statusBadgeClass}>{item.closed ? 'Closed' : 'Open'}</span>
+          </p>
+        </div>
         <Link to={`/bugs/${item._id}`} className='btn btn-primary'>
-          View Bug
+          View bug
         </Link>
       </div>
-      <div className="card-footer text-muted">
+      <div className="card-footer text-muted small bg-transparent border-0 pt-0 px-3 pb-3">
         Created {moment(item.createdOn).fromNow()} by {item.createdBy || item.author || 'Unknown'}
       </div>
     </div>

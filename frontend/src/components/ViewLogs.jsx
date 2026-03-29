@@ -17,7 +17,6 @@ const ViewLogs = ({ auth, showError, showSuccess }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setLogs(response.data.bug.timeLogs || []);
-        showSuccess('Logs loaded successfully');
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'Failed to load logs';
         setError(errorMessage);
@@ -28,7 +27,7 @@ const ViewLogs = ({ auth, showError, showSuccess }) => {
     };
 
     fetchLogs();
-  }, [bugId, showError, showSuccess]);
+  }, [bugId, showError]);
 
   const handleEditTestCase = (testId) => {
     navigate(`/bugs/${bugId}/tests/${testId}/edit`);
@@ -64,12 +63,15 @@ const ViewLogs = ({ auth, showError, showSuccess }) => {
   const isQualityAnalyst = auth.role.includes('Quality Analyst');
 
   return (
-    <div className="view-logs">
-      <h2>Logs for Bug {bugId}</h2>
+    <div className="page-shell view-logs">
+      <div className="detail-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Logs For Bug {bugId}</h2>
+      </div>
       {logs.length === 0 ? (
-        <p>No logs found.</p>
+        <div className="empty-state">No logs found.</div>
       ) : (
-        <ul className="list-group">
+        <ul className="list-group clean-list">
           {logs.map((log, index) => (
             <li key={index} className="list-group-item">
               <p><strong>Hours:</strong> {log.hours}</p>
@@ -79,16 +81,19 @@ const ViewLogs = ({ auth, showError, showSuccess }) => {
               <p><strong>Logged By:</strong> {log.loggedBy}</p>
               <p><strong>Logged On:</strong> {new Date(log.loggedOn).toLocaleDateString()}</p>
               {(isAdmin || isQualityAnalyst) && (
-                <>
-                  <button className="btn btn-primary ms-2" onClick={() => handleEditTestCase(log._id)}>Edit Test Case</button>
-                  <button className="btn btn-danger ms-2" onClick={() => handleDeleteTestCase(log._id)}>Delete Test Case</button>
-                </>
+                <div className="actions-row mt-3">
+                  <button className="btn btn-secondary" onClick={() => handleEditTestCase(log._id)}>Edit Test Case</button>
+                  <button className="btn btn-secondary" onClick={() => handleDeleteTestCase(log._id)}>Delete Test Case</button>
+                </div>
               )}
             </li>
           ))}
         </ul>
       )}
-      <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>Go Back</button>
+      <div className="actions-row mt-4">
+        <button className="btn btn-secondary" onClick={() => navigate(-1)}>Back</button>
+      </div>
+      </div>
     </div>
   );
 };

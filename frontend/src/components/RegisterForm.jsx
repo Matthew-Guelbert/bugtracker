@@ -95,9 +95,10 @@ const RegisterForm = ({ showError, showSuccess }) => {
   };
 
   return (
-    <div className="register-container gradient-bg">
-      <div className="register-box glass-card shadow-lg">
-        <h2 className="register-title mb-4">Create Your Account</h2>
+    <div className="register-container px-3">
+      <div className="auth-shell">
+        <h2 className="auth-title mb-2">Create Your Account</h2>
+        <p className="auth-subtitle">Start tracking bugs with your team.</p>
         <form
           className="register-form needs-validation"
           noValidate
@@ -216,7 +217,7 @@ const RegisterForm = ({ showError, showSuccess }) => {
             <div className="invalid-feedback">Please confirm your password.</div>
           </div>
 
-          <button type="submit" className="btn btn-gradient-primary w-100 py-2 mt-2 shadow-sm">
+          <button type="submit" className="btn btn-primary w-100 py-2 mt-2">
             <i className="bi bi-person-plus me-2"></i>Register
           </button>
 

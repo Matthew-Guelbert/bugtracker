@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const UserDetails = ({ auth, showError, showSuccess }) => {
+const UserDetails = ({ auth, showError }) => {
   const { userId } = useParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +18,6 @@ const UserDetails = ({ auth, showError, showSuccess }) => {
           }
         });
         setUser(response.data);
-        showSuccess('User data loaded successfully.');
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'Failed to load user data';
         setError(errorMessage);
@@ -29,7 +28,7 @@ const UserDetails = ({ auth, showError, showSuccess }) => {
     };
 
     fetchUser();
-  }, [userId, auth.token, showError, showSuccess]);
+  }, [userId, auth.token, showError]);
 
   if (loading) {
     return <p>Loading...</p>;
@@ -40,12 +39,29 @@ const UserDetails = ({ auth, showError, showSuccess }) => {
   }
 
   return (
-    <div className="user-details">
-      <h2>User Details</h2>
-      <p><strong>Email:</strong> {user.email}</p>
-      <p><strong>Name:</strong> {user.givenName} {user.familyName}</p>
-      <p><strong>Role:</strong> {user.role}</p>
-      <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>Go Back</button>
+    <div className="page-shell user-details">
+      <div className="detail-shell">
+        <div className="page-header mb-3">
+          <h2 className="page-title">User Details</h2>
+        </div>
+        <div className="detail-grid">
+          <div className="detail-item">
+            <span className="label">Email</span>
+            <span>{user.email}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">Name</span>
+            <span>{user.givenName} {user.familyName}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">Role</span>
+            <span>{user.role}</span>
+          </div>
+        </div>
+        <div className="actions-row mt-4">
+          <button className="btn btn-secondary" onClick={() => navigate(-1)}>Back</button>
+        </div>
+      </div>
     </div>
   );
 };

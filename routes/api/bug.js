@@ -70,7 +70,6 @@ router.get('', isLoggedIn(), async (req, res) => {
 // Get a bug by ID
 router.get("/:bugId", isLoggedIn(), validId('bugId'), async (req, res) => {
   const { bugId } = req.params;
-  const token = req.cookies.token;
   debugBug('bugId = ' + bugId);
 
   try {
@@ -427,12 +426,22 @@ router.post("/:bugId/log-hours", isLoggedIn(), validId('bugId'), validBody(logHo
 // Get bugs authored by or assigned to the logged-in user
 router.get('/my-bugs', isLoggedIn(), hasPermission('canViewData'), async (req, res) => {
   try {
-    const userId = req.user.id;
-    const bugs = await Bug.find({
-      $or: [{ createdBy: userId }, { assignedTo: userId }]
-    });
+    const db = await connect();
+    const authUserId = String(req.auth._id || '');
+    const authName = req.auth.name || '';
+
+    const bugs = await db.collection('Bugs').find({
+      $or: [
+        { createdBy: authName },
+        { author: authName },
+        { assignedToUserId: authUserId },
+        { assignedToUserName: authName }
+      ]
+    }).sort({ createdOn: -1 }).toArray();
+
     res.json(bugs);
   } catch (err) {
+    console.error(`Error in GET /bugs/my-bugs: ${err.message}`);
     res.status(500).json({ error: 'Failed to load bugs' });
   }
 });

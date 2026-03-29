@@ -24,7 +24,6 @@ const EditProfile = ({ auth, showError, showSuccess }) => {
           });
           setProfile(response.data);
           setFormData(response.data);
-          showSuccess('Profile loaded successfully.');
         } catch (err) {
           const errorMessage = err.response?.data?.message || 'Failed to load profile';
           setError(errorMessage);
@@ -36,7 +35,7 @@ const EditProfile = ({ auth, showError, showSuccess }) => {
 
       fetchProfile();
     }
-  }, [auth.token, profile, setProfile, showError, showSuccess]);
+  }, [auth.token, profile, setProfile, showError]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,8 +76,11 @@ const EditProfile = ({ auth, showError, showSuccess }) => {
   }
 
   return (
-    <div className="edit-profile">
-      <h2>Edit Profile</h2>
+    <div className="page-shell edit-profile">
+      <div className="form-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Edit Profile</h2>
+      </div>
       <form onSubmit={handleSubmit} className="needs-validation" noValidate>
         <div className="mb-3">
           <label htmlFor="givenName" className="form-label">Given Name</label>
@@ -139,8 +141,11 @@ const EditProfile = ({ auth, showError, showSuccess }) => {
             Please enter a valid password.
           </div>
         </div>
-        <button type="submit" className="btn btn-primary">Save Changes</button>
+        <div className="form-actions mt-3">
+          <button type="submit" className="btn btn-primary">Save Changes</button>
+        </div>
       </form>
+      </div>
     </div>
   );
 };

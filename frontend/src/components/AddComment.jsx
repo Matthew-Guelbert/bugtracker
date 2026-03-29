@@ -39,7 +39,7 @@ const AddComment = ({ auth, showError, showSuccess }) => {
       setLoading(true);
       const token = localStorage.getItem('authToken');
       const response = await axios.post(
-        `http://localhost:5000/api/bugs/${bugId}/comments`,
+        `/api/bugs/${bugId}/comments`,
         { text: commentText },
         {
           headers: {
@@ -62,8 +62,12 @@ const AddComment = ({ auth, showError, showSuccess }) => {
   };
 
   return (
-    <div className="add-comment">
-      <h3>Add Comment for Bug: {bugTitle}</h3>
+    <div className="page-shell add-comment">
+      <div className="form-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Add Comment</h2>
+        <p className="page-subtitle">{bugTitle ? `Bug: ${bugTitle}` : ''}</p>
+      </div>
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label htmlFor="commentText" className="form-label">Comment</label>
@@ -76,18 +80,21 @@ const AddComment = ({ auth, showError, showSuccess }) => {
             disabled={loading}
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Adding...' : 'Add Comment'}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary ms-2"
-          onClick={handleCancel}
-          disabled={loading}
-        >
-          Cancel
-        </button>
+        <div className="form-actions mt-3">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Adding...' : 'Add Comment'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleCancel}
+            disabled={loading}
+          >
+            Cancel
+          </button>
+        </div>
       </form>
+      </div>
     </div>
   );
 };

@@ -15,8 +15,12 @@ import { fileURLToPath } from 'url';
 const app = express();
 const port = process.env.PORT || 3000;
 
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+  : ['http://localhost:5173', 'http://localhost:5174'];
+
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174'], // Support both Vite ports
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -43,7 +47,7 @@ import { commentRouter } from './routes/api/comment.js';
 import { testRouter } from './routes/api/test.js';
 
 app.get('/', (req, res) => {
-  res.send('Hello World TEST TEST TEST!');
+  res.status(200).send('BugTracker API is running.');
 });
 
 // API routes
@@ -62,7 +66,7 @@ app.get('*', (req, res) => {
 
 // universal exception handler 
 app.use((err, req, res, next) => {
-  res.status(err.status).json({ error: err.message});
+  res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
 });
 
 // Start the server AFTER all routes are defined (only if not in test environment)

@@ -149,8 +149,6 @@ router.get('', isLoggedIn(), async (req, res) => {
       pageNumber
     });
 
-    console.log(result.users);
-    
     // Return the paginated response
     res.status(200).json(result);
 

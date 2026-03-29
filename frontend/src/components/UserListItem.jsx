@@ -8,20 +8,24 @@ const UserListItem = ({ item, auth }) => {
   const isTechnicalManager = auth.role.includes('Technical Manager');
 
   return (
-    <div className="card mb-3">
-      <div className="card-body">
-        <h5 className="card-title">{fullName}</h5>
-        <p>{item.role}</p>
-        <Link to={`/users/${item._id}`} className='btn btn-secondary'>
-          View User
-        </Link>
-        {(isAdmin || isTechnicalManager) && (
-          <Link to={`/users/${item._id}/edit`} className='btn btn-primary ms-2'>
-            Edit User
+    <div className="card mb-3 entity-card">
+      <div className="card-body d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+        <div>
+          <h5 className="card-title mb-1">{fullName}</h5>
+          <p className="mb-0 text-muted">{item.role}</p>
+        </div>
+        <div className="d-flex flex-wrap gap-2">
+          <Link to={`/users/${item._id}`} className='btn btn-secondary'>
+            View
           </Link>
-        )}
+          {(isAdmin || isTechnicalManager) && (
+            <Link to={`/users/${item._id}/edit`} className='btn btn-primary'>
+              Edit
+            </Link>
+          )}
+        </div>
       </div>
-      <div className="card-footer text-muted">
+      <div className="card-footer text-muted small bg-transparent border-0 pt-0 px-3 pb-3">
         Registered {moment(item.createdOn).fromNow()}
       </div>
     </div>

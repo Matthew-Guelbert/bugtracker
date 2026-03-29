@@ -36,7 +36,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
     setLoading(true);
     setError(null); // Clear previous errors
     try {
-      const response = await axios.get('http://localhost:5000/api/bugs', {
+      const response = await axios.get('/api/bugs', {
         headers: {
           Authorization: `Bearer ${auth.token}`,
         },
@@ -54,9 +54,6 @@ const BugList = ({ auth, showError, showSuccess }) => {
       setBugs(response.data.bugs || []);
       setTotalPages(response.data.totalPages || 1);
       setTotalBugs(response.data.totalBugs || 0);
-      if ((response.data.bugs?.length === 0) && keywords.trim()) {
-        showSuccess('No bugs found matching your search criteria');
-      }
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to load bugs';
       console.error('Error fetching bugs:', errorMessage);
@@ -68,7 +65,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
     } finally {
       setLoading(false);
     }
-  }, [auth.token, keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, showError, showSuccess]);
+  }, [auth.token, keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, showError]);
 
   // Debounced useEffect for search criteria changes and pagination
   useEffect(() => {
@@ -116,34 +113,6 @@ const BugList = ({ auth, showError, showSuccess }) => {
   const memoizedBugs = useMemo(() => {
     if (bugs.length === 0) return null;
     return (
-      <>
-      <style>{`
-        .badge-gradient {
-          color: #fff !important;
-          border: none;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        }
-        .badge-gradient-primary {
-          background: linear-gradient(90deg, #007bff 0%, #00c6ff 100%);
-        }
-        .badge-gradient-success {
-          background: linear-gradient(90deg, #28a745 0%, #00c851 100%);
-        }
-        .badge-gradient-danger {
-          background: linear-gradient(90deg, #dc3545 0%, #ff416c 100%);
-        }
-        .badge-gradient-warning {
-          background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
-          color: #212529 !important;
-        }
-        .badge-gradient-secondary {
-          background: linear-gradient(90deg, #6c757d 0%, #b0bec5 100%);
-        }
-        .badge-gradient-light {
-          background: linear-gradient(90deg, #f8f9fa 0%, #e0e0e0 100%);
-          color: #212529 !important;
-        }
-      `}</style>
       <div className="table-responsive">
         <table className="table table-hover align-middle bg-white border rounded shadow-sm">
           <thead className="table-light">
@@ -186,7 +155,6 @@ const BugList = ({ auth, showError, showSuccess }) => {
           </tbody>
         </table>
       </div>
-      </>
     );
   }, [bugs]);
 
@@ -198,13 +166,8 @@ const BugList = ({ auth, showError, showSuccess }) => {
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
         <h2 className="fw-bold mb-0">Bug Tracker</h2>
         <button
-          className="btn-gradient-primary btn-lg px-4 shadow"
+          className="btn btn-primary btn-lg px-4"
           onClick={handleReportBug}
-          style={{ 
-            background: 'linear-gradient(90deg, #0052cc 0%, #2684ff 100%)', 
-            color: '#fff', 
-            border: 'none' 
-          }}
         >
           <i className="bi bi-plus-circle me-2"></i>Report Bug
         </button>

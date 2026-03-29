@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import UserListItem from './UserListItem';
 
-const UserList = ({ auth, showError, showSuccess }) => {
+const UserList = ({ auth, showError }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ const UserList = ({ auth, showError, showSuccess }) => {
   const [debounceTimer, setDebounceTimer] = useState(null);
 
   // Fetch users based on search criteria
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const response = await axios.get('/api/users', {
@@ -42,12 +42,9 @@ const UserList = ({ auth, showError, showSuccess }) => {
         },
       });
 
-      console.log('Users response:', response.data);
       setUsers(response.data.users); // Assuming 'users' is the key for returned data
       setTotalUsers(response.data.totalUsers); // Assuming 'totalUsers' is the key for total count
       setTotalPages(Math.ceil(response.data.totalUsers / pageSize)); // Calculate total pages
-
-      showSuccess('User list loaded successfully');
       setError(null); // Clear errors if successful
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to load users';
@@ -56,7 +53,7 @@ const UserList = ({ auth, showError, showSuccess }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [auth.token, keywords, role, maxAge, minAge, sortBy, pageSize, currentPage, showError]);
 
   // Debounced useEffect for search criteria changes
   useEffect(() => {
@@ -74,7 +71,7 @@ const UserList = ({ auth, showError, showSuccess }) => {
 
     // Cleanup function
     return () => clearTimeout(timer);
-  }, [keywords, role, maxAge, minAge, sortBy, currentPage, pageSize]); // Trigger on search inputs change, page size change, or page change
+  }, [keywords, role, maxAge, minAge, sortBy, currentPage, pageSize, fetchUsers]);
 
   // Pagination handlers
   const handlePreviousPage = () => {
@@ -96,27 +93,31 @@ const UserList = ({ auth, showError, showSuccess }) => {
   };
 
   return (
-    <div className="user-list">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>User List</h2>
+    <div className="user-list page-shell">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">Users</h2>
+          <p className="page-subtitle">Browse teammates and quickly manage account roles.</p>
+        </div>
       </div>
 
-      {/* Search Interface */}
-      <div className="search-interface mb-4">
-        <div className="input-group mb-3">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search by keywords"
-            name="keywords"
-            value={keywords}
-            onChange={(e) => setKeywords(e.target.value)}
-          />
-        </div>
+      <div className="list-layout">
+        <aside className="filter-panel">
+          <h5>Filters</h5>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Search</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search by keywords"
+              name="keywords"
+              value={keywords}
+              onChange={(e) => setKeywords(e.target.value)}
+            />
+          </div>
 
-        <div className="row">
-          <div className="col-md-3">
-            <label>Role:</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Role</label>
             <select
               name="role"
               className="form-select"
@@ -134,36 +135,30 @@ const UserList = ({ auth, showError, showSuccess }) => {
             </select>
           </div>
 
-          <div className="col-md-3">
-            <label>Max Age (days):</label>
-            <div className="input-group">
-              <input
-                type="number"
-                name="maxAge"
-                className="form-control"
-                value={maxAge}
-                onChange={(e) => setMaxAge(e.target.value)}
-              />
-              <span className="input-group-text">days</span>
-            </div>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Max Age (days)</label>
+            <input
+              type="number"
+              name="maxAge"
+              className="form-control"
+              value={maxAge}
+              onChange={(e) => setMaxAge(e.target.value)}
+            />
           </div>
 
-          <div className="col-md-3">
-            <label>Min Age (days):</label>
-            <div className="input-group">
-              <input
-                type="number"
-                name="minAge"
-                className="form-control"
-                value={minAge}
-                onChange={(e) => setMinAge(e.target.value)}
-              />
-              <span className="input-group-text">days</span>
-            </div>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Min Age (days)</label>
+            <input
+              type="number"
+              name="minAge"
+              className="form-control"
+              value={minAge}
+              onChange={(e) => setMinAge(e.target.value)}
+            />
           </div>
 
-          <div className="col-md-3">
-            <label>Sort By:</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Sort By</label>
             <select
               name="sortBy"
               className="form-select"
@@ -177,66 +172,65 @@ const UserList = ({ auth, showError, showSuccess }) => {
               <option value="oldest">Oldest</option>
             </select>
           </div>
-        </div>
-      </div>
 
-      {/* Page Size Selector */}
-      <div className="page-size-selector mb-4">
-        <label>Users per page:</label>
-        <select
-          className="form-select"
-          value={pageSize}
-          onChange={handlePageSizeChange}
-        >
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-        </select>
-      </div>
-
-      {error && (
-        <div className="alert alert-danger my-4">{error}</div>
-      )}
-
-      {loading ? (
-        <div className="d-flex justify-content-center my-4">
-          <span>Loading...</span>
-        </div>
-      ) : users.length === 0 ? (
-        <div className="alert alert-info my-4">No users found.</div>
-      ) : (
-        users.map((user) => {
-          console.log('User:', user);
-          return (
-            <Link
-              key={user._id}
-              to={`/users/${user._id}`}
-              className="text-decoration-none text-dark"
+          <div>
+            <label className="form-label fw-semibold">Users per page</label>
+            <select
+              className="form-select"
+              value={pageSize}
+              onChange={handlePageSizeChange}
             >
-              <UserListItem item={user} auth={auth} />
-            </Link>
-          );
-        })
-      )}
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </div>
+        </aside>
 
-      {/* Pagination Controls */}
-      <div className="pagination-controls d-flex justify-content-between my-4">
-        <button 
-          className="btn btn-primary" 
-          onClick={handlePreviousPage} 
-          disabled={currentPage === 1}
-        >
-          Previous
-        </button>
-        <span>Page {currentPage} of {totalPages}</span>
-        <button 
-          className="btn btn-primary" 
-          onClick={handleNextPage} 
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </button>
+        <section className="content-panel">
+          {error && (
+            <div className="alert alert-danger my-4">{error}</div>
+          )}
+
+          {loading ? (
+            <div className="d-flex justify-content-center my-4">
+              <span>Loading...</span>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="empty-state my-4">No users found.</div>
+          ) : (
+            users.map((user) => {
+              return (
+                <Link
+                  key={user._id}
+                  to={`/users/${user._id}`}
+                  className="text-decoration-none text-dark"
+                >
+                  <UserListItem item={user} auth={auth} />
+                </Link>
+              );
+            })
+          )}
+
+          <div className="pagination-controls d-flex justify-content-between align-items-center my-4">
+            <button
+              className="btn btn-secondary"
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </button>
+            <span className="text-muted small">Page {currentPage} of {totalPages} ({totalUsers} users)</span>
+            <button
+              className="btn btn-secondary"
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages || totalPages === 0}
+            >
+              Next
+            </button>
+          </div>
+        </section>
       </div>
     </div>
   );

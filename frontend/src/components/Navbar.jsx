@@ -15,80 +15,91 @@ const Navbar = ({ auth, onLogout }) => {
 
   return (
     <header>
-      <nav className='navbar navbar-expand-lg navbar-dark bg-dark'>
+      <nav className='navbar navbar-expand-lg app-navbar'>
         <div className='container'>
-          {/* Logo */}
-          <a className='navbar-brand' href='/'>
+          <NavLink className='navbar-brand' to={auth ? '/landing' : '/login'}>
             <img
               src={logo}
               alt='Issue Tracker logo'
-              style={{ height: '70px', width: 'auto', marginRight: '10px' }}
+              style={{ height: '48px', width: 'auto' }}
             />
-          </a>
+            <span>BugTracker</span>
+          </NavLink>
 
-          {/* Navbar Links */}
-          <ul className='navbar-nav ml-auto'>
-            {/* Show Login and Register if not logged in */}
-            {!auth && (
-              <>
-                <li className='nav-item'>
-                  <NavLink className='nav-link' to='/login'>
-                    LOGIN
-                  </NavLink>
-                </li>
-                <li className='nav-item'>
-                  <NavLink className='nav-link' to='/register'>
-                    REGISTER
-                  </NavLink>
-                </li>
-              </>
-            )}
+          <button
+            className="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
 
-            {/* Show main links if logged in */}
-            {auth && (
-              <>
-                <li className="nav-item">
-                  <NavLink className="nav-link" to="/landing">
-                    HOME
-                  </NavLink>
-                </li>
-                <li className='nav-item'>
-                  <NavLink className='nav-link' to='/bugs'>
-                    BUGS
-                  </NavLink>
-                </li>
-                <li className='nav-item'>
-                  <NavLink className='nav-link' to='/users'>
-                    USERS
-                  </NavLink>
-                </li>
-                <li className='nav-item dropdown'>
-                  <a
-                    className='nav-link dropdown-toggle'
-                    href='#'
-                    id='navbarDropdown'
-                    role='button'
-                    data-bs-toggle='dropdown'
-                    aria-expanded='false'
-                  >
-                    {profile ? profile.name : 'User'}
-                  </a>
-                  <ul className='dropdown-menu' aria-labelledby='navbarDropdown'>
-                    <li>
-                      <NavLink className='dropdown-item' to='/profile'>
-                        Profile Settings
-                      </NavLink>
-                    </li>
-                    <li>
-                      <a className='dropdown-item' href='#' onClick={onClickLogout}>
-                        Logout
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-              </>
-            )}
-          </ul>
+          <div className="collapse navbar-collapse" id="mainNavbar">
+            <ul className='navbar-nav ms-auto align-items-lg-center gap-lg-2'>
+              {!auth && (
+                <>
+                  <li className='nav-item'>
+                    <NavLink className='nav-link' to='/login'>
+                      Log in
+                    </NavLink>
+                  </li>
+                  <li className='nav-item'>
+                    <NavLink className='nav-link' to='/register'>
+                      Register
+                    </NavLink>
+                  </li>
+                </>
+              )}
+
+              {auth && (
+                <>
+                  <li className="nav-item">
+                    <NavLink className="nav-link" to="/landing">
+                      Home
+                    </NavLink>
+                  </li>
+                  <li className='nav-item'>
+                    <NavLink className='nav-link' to='/bugs'>
+                      Bugs
+                    </NavLink>
+                  </li>
+                  <li className='nav-item'>
+                    <NavLink className='nav-link' to='/users'>
+                      Users
+                    </NavLink>
+                  </li>
+                  <li className='nav-item dropdown'>
+                    <a
+                      className='nav-link dropdown-toggle'
+                      href='#'
+                      id='navbarDropdown'
+                      role='button'
+                      data-bs-toggle='dropdown'
+                      aria-expanded='false'
+                    >
+                      {profile?.givenName || profile?.name || 'Account'}
+                    </a>
+                    <ul className='dropdown-menu dropdown-menu-end' aria-labelledby='navbarDropdown'>
+                      <li>
+                        <NavLink className='dropdown-item' to='/profile'>
+                          Profile settings
+                        </NavLink>
+                      </li>
+                      <li>
+                        <a className='dropdown-item' href='#' onClick={onClickLogout}>
+                          Log out
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                </>
+              )}
+            </ul>
+          </div>
         </div>
       </nav>
     </header>

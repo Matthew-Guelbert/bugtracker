@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import MyBugListItem from './MyBugListItem';
 
-const MyBugList = ({ auth, showError, showSuccess }) => {
+const MyBugList = ({ auth, showError }) => {
   const [bugs, setBugs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,7 +22,6 @@ const MyBugList = ({ auth, showError, showSuccess }) => {
 
   // Fetch bugs based on search criteria
   const fetchBugs = useCallback(async () => {
-    console.log('Fetching bugs with criteria:', { keywords, classification, maxAge, minAge, closed, sortBy });
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
@@ -39,24 +38,18 @@ const MyBugList = ({ auth, showError, showSuccess }) => {
           sortBy,
         },
       });
-      console.log('Bugs response:', response.data);
       setBugs(response.data);
-      showSuccess('Bugs loaded successfully');
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to load bugs';
-      console.error('Error fetching bugs:', errorMessage);
-      console.error('Error details:', err.response?.data || err);
       setError(errorMessage);
       showError(errorMessage);
     } finally {
       setLoading(false);
-      console.log('Loading state set to false');
     }
-  }, [auth.token, keywords, classification, maxAge, minAge, closed, sortBy, showError, showSuccess]);
+  }, [auth.token, keywords, classification, maxAge, minAge, closed, sortBy, showError]);
 
   // Debounced useEffect for search criteria changes
   useEffect(() => {
-    console.log('Search criteria changed:', { keywords, classification, maxAge, minAge, closed, sortBy });
     // Clear existing debounce timer
     if (debounceTimer) {
       clearTimeout(debounceTimer);
@@ -96,34 +89,35 @@ const MyBugList = ({ auth, showError, showSuccess }) => {
   if (error) return <div className="alert alert-danger">{error}</div>;
 
   return (
-    <div className="bug-list">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>My Bugs</h2>
-        <button
-          className="btn btn-secondary"
-          onClick={() => navigate('/landing')}
-        >
-          Go Back
+    <div className="bug-list page-shell">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">My Bugs</h2>
+          <p className="page-subtitle">Focus on issues currently assigned to you.</p>
+        </div>
+        <button className="btn btn-secondary" onClick={() => navigate('/landing')}>
+          Back to Home
         </button>
       </div>
 
-      {/* Search Interface */}
-      <div className="search-interface mb-4">
-        <div className="input-group mb-3">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search by keyword"
-            name="keywords"
-            value={keywords}
-            onChange={(e) => setKeywords(e.target.value)}
-            ref={keywordsRef} // Attach the ref to the input field
-          />
-        </div>
+      <div className="list-layout">
+        <aside className="filter-panel">
+          <h5>Filters</h5>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Search</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search by keyword"
+              name="keywords"
+              value={keywords}
+              onChange={(e) => setKeywords(e.target.value)}
+              ref={keywordsRef}
+            />
+          </div>
 
-        <div className="row">
-          <div className="col-md-3">
-            <label>Classification:</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Classification</label>
             <select
               name="classification"
               className="form-select"
@@ -137,8 +131,8 @@ const MyBugList = ({ auth, showError, showSuccess }) => {
             </select>
           </div>
 
-          <div className="col-md-3">
-            <label>Max Age (days):</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Max Age (days)</label>
             <input
               type="number"
               name="maxAge"
@@ -148,8 +142,8 @@ const MyBugList = ({ auth, showError, showSuccess }) => {
             />
           </div>
 
-          <div className="col-md-3">
-            <label>Min Age (days):</label>
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Min Age (days)</label>
             <input
               type="number"
               name="minAge"
@@ -159,18 +153,22 @@ const MyBugList = ({ auth, showError, showSuccess }) => {
             />
           </div>
 
-          <div className="col-md-3">
-            <label>Closed:</label>
-            <input
-              type="checkbox"
-              name="closed"
-              checked={closed}
-              onChange={(e) => setClosed(e.target.checked)}
-            />
+          <div className="mb-3">
+            <label className="form-label fw-semibold">Closed</label>
+            <div className="form-check form-switch mt-1">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                name="closed"
+                checked={closed}
+                onChange={(e) => setClosed(e.target.checked)}
+                id="myBugsClosedSwitch"
+              />
+            </div>
           </div>
 
-          <div className="col-md-3">
-            <label>Sort By:</label>
+          <div>
+            <label className="form-label fw-semibold">Sort By</label>
             <select
               name="sortBy"
               className="form-select"
@@ -185,16 +183,16 @@ const MyBugList = ({ auth, showError, showSuccess }) => {
               <option value="createdBy">Reported By</option>
             </select>
           </div>
-        </div>
-      </div>
+        </aside>
 
-      {bugs.length === 0 && !loading ? (
-        <div className="alert alert-info my-4">
-          No bugs found.
-        </div>
-      ) : (
-        memoizedBugs
-      )}
+        <section className="content-panel">
+          {bugs.length === 0 && !loading ? (
+            <div className="empty-state my-4">No bugs found.</div>
+          ) : (
+            memoizedBugs
+          )}
+        </section>
+      </div>
     </div>
   );
 };

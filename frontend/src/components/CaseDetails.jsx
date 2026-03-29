@@ -17,7 +17,6 @@ const CaseDetails = ({ auth, showError, showSuccess }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setTests(response.data);
-        showSuccess('Test cases loaded successfully');
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'Failed to load test cases';
         setError(errorMessage);
@@ -28,7 +27,7 @@ const CaseDetails = ({ auth, showError, showSuccess }) => {
     };
 
     fetchTestCases();
-  }, [bugId, showError, showSuccess]);
+  }, [bugId, showError]);
 
   if (loading) {
     return <p>Loading...</p>;
@@ -39,12 +38,15 @@ const CaseDetails = ({ auth, showError, showSuccess }) => {
   }
 
   return (
-    <div className="case-details">
-      <h2>Test Cases for Bug {bugId}</h2>
+    <div className="page-shell case-details">
+      <div className="detail-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Test Cases For Bug {bugId}</h2>
+      </div>
       {tests.length === 0 ? (
-        <p>No test cases found.</p>
+        <div className="empty-state">No test cases found.</div>
       ) : (
-        <ul className="list-group">
+        <ul className="list-group clean-list">
           {tests.map((test) => (
             <li key={test._id} className="list-group-item">
               <h5>{test.title}</h5>
@@ -56,7 +58,10 @@ const CaseDetails = ({ auth, showError, showSuccess }) => {
           ))}
         </ul>
       )}
-      <button className="btn btn-secondary mt-3" onClick={() => navigate(-1)}>Go Back</button>
+      <div className="actions-row mt-4">
+        <button className="btn btn-secondary" onClick={() => navigate(-1)}>Back</button>
+      </div>
+      </div>
     </div>
   );
 };

@@ -29,7 +29,6 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
     const fetchBugDetails = async () => {
       try {
         const response = await axios.get(`/api/bugs/${bugId}`);
-        console.log('Bug response:', response.data);
         
         // Check if we got HTML instead of JSON (proxy issue)
         if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
@@ -53,18 +52,14 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
 
     const fetchAllUsers = async () => {
       try {
-        console.log('Auth prop:', auth);
-        
         let allUsers = [];
         let currentPage = 1;
         let totalPages = 1;
 
         while (currentPage <= totalPages) {
-          console.log(`Fetching users page ${currentPage}`);
           const response = await axios.get('/api/users', {
             params: { pageNumber: currentPage, pageSize: 100 },
           });
-          console.log(`Users response page ${currentPage}:`, response.data);
           
           // Check if we got HTML instead of JSON (proxy issue)
           if (typeof response.data === 'string' && response.data.includes('<!DOCTYPE html>')) {
@@ -80,26 +75,16 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
           currentPage++;
         }
 
-        // For now, let's show all users to debug the issue
-        console.log('All users:', allUsers);
-        console.log('Setting all users (no filtering for debugging)');
-        setUsers(allUsers);
-        
-        // TODO: Re-enable filtering once the basic functionality works
-        // const filteredUsers = allUsers.filter(user => {
-        //   const userRoles = Array.isArray(user.role) ? user.role : [user.role];
-        //   return userRoles.some(role => 
-        //     role === 'Developer' || 
-        //     role === 'Business Analyst' || 
-        //     role === 'Quality Analyst'
-        //   );
-        // });
-        // setUsers(filteredUsers);
+        const filteredUsers = allUsers.filter((user) => {
+          const userRoles = Array.isArray(user.role) ? user.role : [user.role];
+          return userRoles.some((role) =>
+            role === 'Developer' ||
+            role === 'Business Analyst' ||
+            role === 'Quality Analyst'
+          );
+        });
+        setUsers(filteredUsers);
       } catch (err) {
-        console.error('Error fetching users:', err);
-        console.error('Error response:', err.response);
-        console.error('Error status:', err.response?.status);
-        console.error('Error message:', err.response?.data);
         const errorMessage = err.response?.data?.message || 'Failed to load users';
         setError(errorMessage);
         showError(errorMessage);
@@ -196,11 +181,6 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
   if (loading) return <p>Loading...</p>;
   if (error) return <div className="alert alert-danger">{error}</div>;
 
-  // Debug logging
-  console.log('Profile:', profile);
-  console.log('Auth:', auth);
-  console.log('Bug:', bug);
-
   // Use profile from context, fallback to auth prop
   const userProfile = profile || auth;
   
@@ -211,14 +191,15 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
   const isProductManager = profileRoles.includes('Product Manager');
   const isAssignedToUser = userProfile?.name === bug?.assignedToUserName;
 
-  console.log('Permission checks:', { isAdmin, isBusinessAnalyst, isProductManager, isAssignedToUser });
-
-  // Temporary override for debugging - allow editing if user is logged in
-  const canEdit = true; // TODO: Remove this and use proper permissions: isAdmin || isProductManager || isAssignedToUser;
-  const canClassify = true; // TODO: Remove this and use proper permissions: isAdmin || isBusinessAnalyst;
+  const canEdit = isAdmin || isProductManager || isAssignedToUser;
+  const canClassify = isAdmin || isBusinessAnalyst;
 
   return (
-    <form onSubmit={handleSaveChanges} className="bug-editor">
+    <div className="page-shell bug-editor">
+    <form onSubmit={handleSaveChanges} className="form-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Edit Bug</h2>
+      </div>
       <div className="mb-3">
         <label htmlFor="title" className="form-label">Title</label>
         <input
@@ -303,11 +284,14 @@ const BugEditor = ({ auth, showError, showSuccess }) => {
         </select>
       </div>
 
-      <button type="submit" className="btn btn-primary">Save Changes</button>
-      <button type="button" className="btn btn-secondary ms-2" onClick={() => navigate(-1)}>
-        Go Back
-      </button>
+      <div className="form-actions mt-3">
+        <button type="submit" className="btn btn-primary">Save Changes</button>
+        <button type="button" className="btn btn-secondary" onClick={() => navigate(-1)}>
+          Back
+        </button>
+      </div>
     </form>
+    </div>
   );
 };
 

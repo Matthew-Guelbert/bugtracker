@@ -38,6 +38,25 @@ const App = () => {
   const navigate = useNavigate();
   const { setProfile } = useUserProfile();
 
+  const notify = useCallback((message, type = 'default') => {
+    // Keep only one toast visible and replace it with the latest message.
+    toast.dismiss();
+    toast(message, {
+      type,
+      position: 'bottom-right',
+      autoClose: 3000,
+      toastId: 'global-toast',
+    });
+  }, []);
+
+  const showError = useCallback((message) => {
+    notify(message, 'error');
+  }, [notify]);
+
+  const showSuccess = useCallback((message) => {
+    notify(message, 'success');
+  }, [notify]);
+
   useEffect(() => {
     // Set up axios interceptor to automatically add the Authorization header and handle 401 globally
     const interceptor = axios.interceptors.request.use(
@@ -61,7 +80,7 @@ const App = () => {
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
           navigate('/login');
-          toast('Session expired. Please log in again.', { type: 'error', position: 'bottom-right' });
+          showError('Session expired. Please log in again.');
         }
         return Promise.reject(error);
       }
@@ -112,15 +131,7 @@ const App = () => {
       axios.interceptors.request.eject(interceptor);
       axios.interceptors.response.eject(responseInterceptor);
     };
-  }, [setProfile, navigate]);
-
-  const showError = useCallback((message) => {
-    toast(message, { type: 'error', position: 'bottom-right' });
-  }, []);
-
-  const showSuccess = useCallback((message) => {
-    toast(message, { type: 'success', position: 'bottom-right' });
-  }, []);
+  }, [setProfile, navigate, showError]);
 
   const onLogin = useCallback((authData) => {
     setAuth(authData);
@@ -163,7 +174,15 @@ const App = () => {
   return (
     <div className="App">
       <Navbar auth={auth} onLogout={onLogout} />
-      <ToastContainer />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3000}
+        closeOnClick
+        pauseOnHover
+        draggable
+        newestOnTop
+        limit={1}
+      />
       <main className="container my-5">
         <Routes>
           <Route path="/" element={<Navigate to={auth ? "/landing" : "/login"} />} />

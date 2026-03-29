@@ -35,7 +35,6 @@ const AddBug = ({ auth, showError, showSuccess }) => {
       return;
     }
 
-    console.log('Auth data:', { token: auth.token, name: auth.name });
     setLoading(true);
     setError(null); // Clear previous errors
 
@@ -55,15 +54,6 @@ const AddBug = ({ auth, showError, showSuccess }) => {
       showSuccess('Bug created successfully');
       navigate('/bugs'); // Redirect to BugList.jsx
     } catch (error) {
-      console.error('Error creating bug:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Full error details:', JSON.stringify(error.response?.data, null, 2));
-      console.error('Error status:', error.response?.status);
-      console.error('Request data sent:', {
-        ...bug,
-        author: auth.name,
-      });
-      
       // Handle validation errors specifically
       let errorMessage = 'Failed to create the bug. Please try again.';
       if (error.response?.data?.error) {
@@ -92,8 +82,11 @@ const AddBug = ({ auth, showError, showSuccess }) => {
   };
 
   return (
-    <div className="add-bug">
-      <h2>Report a Bug</h2>
+    <div className="page-shell add-bug">
+      <div className="form-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Report A Bug</h2>
+      </div>
       {error && <div className="alert alert-danger">{error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
@@ -130,17 +123,20 @@ const AddBug = ({ auth, showError, showSuccess }) => {
             required
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Submitting...' : 'Submit Bug'}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary ms-2"
-          onClick={handleCancel}
-        >
-          Cancel
-        </button>
+        <div className="form-actions mt-3">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Submitting...' : 'Submit Bug'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleCancel}
+          >
+            Cancel
+          </button>
+        </div>
       </form>
+      </div>
     </div>
   );
 };

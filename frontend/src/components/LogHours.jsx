@@ -43,8 +43,12 @@ const LogHours = ({ auth, showError, showSuccess }) => {
   };
 
   return (
-    <div className="log-hours">
-      <h2>Log Hours for Bug {bugId}</h2>
+    <div className="page-shell log-hours">
+      <div className="form-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Log Hours</h2>
+        <p className="page-subtitle">Bug #{bugId}</p>
+      </div>
       {error && <div className="alert alert-danger">{error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
@@ -95,10 +99,13 @@ const LogHours = ({ auth, showError, showSuccess }) => {
             onChange={handleInputChange}
           />
         </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Logging...' : 'Log Hours'}
-        </button>
+        <div className="form-actions mt-3">
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Logging...' : 'Log Hours'}
+          </button>
+        </div>
       </form>
+      </div>
     </div>
   );
 };

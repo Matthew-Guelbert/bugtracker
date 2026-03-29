@@ -92,10 +92,6 @@ async function GetAllUsers({ keywords, role, maxAge, minAge, sortBy, pageSize = 
     const cursor = db.collection('Users').aggregate(pipeline);
     const users = await cursor.toArray();
     
-    users.forEach(user => {
-      console.log(user.roles);
-    })
-
     // Count the total number of users that match the search criteria
     const totalUsers = await db.collection('Users').countDocuments(match);
     const totalPages = Math.ceil(totalUsers / pageSize);
@@ -205,7 +201,6 @@ async function UpdateUser(updatedUser) {
       { _id: new ObjectId(_id) },
       { $set: updateFields } // Ensure updatedUser is an object with the fields to update
     );
-    console.log(`User updated in database: ${JSON.stringify(dbResult)}`);
     return dbResult;
   } catch (error) {
     console.error(`Error in UpdateUser: ${error.message}`);

@@ -31,7 +31,6 @@ const UserEditor = ({ auth, showError, showSuccess }) => {
           familyName: response.data.familyName,
           role: response.data.role
         });
-        showSuccess('User data loaded successfully.');
       } catch (err) {
         const errorMessage = err.response?.data?.message || 'Failed to load user data';
         setError(errorMessage);
@@ -42,7 +41,7 @@ const UserEditor = ({ auth, showError, showSuccess }) => {
     };
 
     fetchUser();
-  }, [userId, auth.token, showError, showSuccess]);
+  }, [userId, auth.token, showError]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,8 +74,11 @@ const UserEditor = ({ auth, showError, showSuccess }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="user-editor">
-      <h1>Edit User</h1>
+    <div className="page-shell user-editor">
+      <form onSubmit={handleSubmit} className="form-shell">
+      <div className="page-header mb-3">
+        <h2 className="page-title">Edit User</h2>
+      </div>
       <div className="mb-3">
         <label htmlFor='email' className="form-label">Email</label>
         <input
@@ -139,8 +141,12 @@ const UserEditor = ({ auth, showError, showSuccess }) => {
           ))}
         </select>
       </div>
-      <button type='submit' className='btn btn-primary'>Save Changes</button>
-    </form>
+      <div className="form-actions mt-3">
+        <button type='submit' className='btn btn-primary'>Save Changes</button>
+        <button type='button' className='btn btn-secondary' onClick={() => navigate(-1)}>Cancel</button>
+      </div>
+      </form>
+    </div>
   );
 };
 

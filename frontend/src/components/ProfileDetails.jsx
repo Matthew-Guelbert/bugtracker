@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUserProfile } from '../contexts/UserProfileContext';
 
-const ProfileDetails = ({ auth, showError, showSuccess }) => {
+const ProfileDetails = ({ auth, showError }) => {
   const { profile, setProfile } = useUserProfile();
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,7 +16,6 @@ const ProfileDetails = ({ auth, showError, showSuccess }) => {
         },
       });
       setProfile(response.data);
-      showSuccess('Profile loaded successfully.');
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to load profile';
       showError(errorMessage);
@@ -38,16 +37,31 @@ const ProfileDetails = ({ auth, showError, showSuccess }) => {
   }
 
   return (
-    <div className="profile-details">
-      <h2>Profile Details</h2>
-      <div>
-        <p><strong>Name:</strong> {profile.givenName} {profile.familyName}</p>
-        <p><strong>Email:</strong> {profile.email}</p>
-        <p><strong>Role:</strong> {Array.isArray(profile.role) ? profile.role.join(', ') : 'No roles assigned'}</p>
+    <div className="page-shell profile-details">
+      <div className="detail-shell">
+        <div className="page-header mb-3">
+          <h2 className="page-title">Profile</h2>
+        </div>
+        <div className="detail-grid">
+          <div className="detail-item">
+            <span className="label">Name</span>
+            <span>{profile.givenName} {profile.familyName}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">Email</span>
+            <span>{profile.email}</span>
+          </div>
+          <div className="detail-item">
+            <span className="label">Role</span>
+            <span>{Array.isArray(profile.role) ? profile.role.join(', ') : 'No roles assigned'}</span>
+          </div>
+        </div>
+        <div className="actions-row mt-4">
+          <button className="btn btn-primary" onClick={() => navigate('/profile/edit')}>
+            Edit Profile
+          </button>
+        </div>
       </div>
-      <button className="btn btn-primary mt-3" onClick={() => navigate('/profile/edit')}>
-        Edit Profile
-      </button>
     </div>
   );
 };

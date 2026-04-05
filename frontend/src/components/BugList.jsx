@@ -14,6 +14,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
   const [maxAge, setMaxAge] = useState('');
   const [minAge, setMinAge] = useState('');
   const [closed, setClosed] = useState(false);
+  const [onlyMine, setOnlyMine] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [pageSize, setPageSize] = useState(10);
   const [pageNumber, setPageNumber] = useState(1);
@@ -46,6 +47,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
           maxAge: maxAge || undefined,
           minAge: minAge || undefined,
           closed,
+          onlyMine,
           sortBy,
           pageSize,
           pageNumber,
@@ -65,7 +67,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
     } finally {
       setLoading(false);
     }
-  }, [auth.token, keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, showError]);
+  }, [auth.token, keywords, classification, maxAge, minAge, closed, onlyMine, sortBy, pageSize, pageNumber, showError]);
 
   // Debounced useEffect for search criteria changes and pagination
   useEffect(() => {
@@ -80,12 +82,16 @@ const BugList = ({ auth, showError, showSuccess }) => {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, fetchBugs]);
+  }, [keywords, classification, maxAge, minAge, closed, onlyMine, sortBy, pageSize, pageNumber, fetchBugs]);
 
 
 
   const handleReportBug = useCallback(() => {
     navigate('/bugs/add');
+  }, [navigate]);
+
+  const handleMyQueue = useCallback(() => {
+    navigate('/my-bugs');
   }, [navigate]);
 
   const handleGoBack = useCallback(() => {
@@ -165,12 +171,17 @@ const BugList = ({ auth, showError, showSuccess }) => {
     <div className="bug-list container-fluid">
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
         <h2 className="fw-bold mb-0">Bug Tracker</h2>
-        <button
-          className="btn btn-primary btn-lg px-4"
-          onClick={handleReportBug}
-        >
-          <i className="bi bi-plus-circle me-2"></i>Report Bug
-        </button>
+        <div className="d-flex flex-wrap gap-2">
+          <button className="btn btn-secondary" onClick={handleMyQueue}>
+            <i className="bi bi-person-lines-fill me-2"></i>My Queue
+          </button>
+          <button
+            className="btn btn-primary btn-lg px-4"
+            onClick={handleReportBug}
+          >
+            <i className="bi bi-plus-circle me-2"></i>Report Bug
+          </button>
+        </div>
       </div>
 
       <div className="row">
@@ -241,6 +252,23 @@ const BugList = ({ auth, showError, showSuccess }) => {
                     id="closedSwitch"
                   />
                   <label className="form-check-label" htmlFor="closedSwitch"></label>
+                </div>
+              </div>
+              <div className="mb-3">
+                <label className="form-label fw-semibold">Only My Queue</label>
+                <div className="form-check form-switch mt-1">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    name="onlyMine"
+                    checked={onlyMine}
+                    onChange={(e) => {
+                      setOnlyMine(e.target.checked);
+                      setPageNumber(1);
+                    }}
+                    id="onlyMineSwitch"
+                  />
+                  <label className="form-check-label" htmlFor="onlyMineSwitch"></label>
                 </div>
               </div>
               <div className="mb-3">

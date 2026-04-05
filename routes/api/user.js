@@ -118,10 +118,11 @@ router.patch('/me', isLoggedIn(), async (req, res) => {
       return res.status(400).json({ message: 'No fields to update' });
     }
 
-    // Update the user in the database
-    const updatedUser = await UpdateUser({ _id: userId, ...updates });
+    // Update the user in the database then return a fresh profile document
+    await UpdateUser({ _id: userId, ...updates });
+    const refreshedUser = await GetUserById(userId);
 
-    res.status(200).json({ message: 'User updated successfully', user: updatedUser });
+    res.status(200).json({ message: 'User updated successfully', user: refreshedUser });
   } catch (err) {
     debugUser(`PATCH /api/users/me - Error: ${err.message}`);
     res.status(500).json({ message: 'An error occurred while processing your request' });
@@ -271,6 +272,7 @@ router.patch("/:userId", hasPermission('canEditAnyUser'), validId('userId'), val
 
       // Update the user in the database
       await UpdateUser({ ...user, ...updates });
+      const refreshedUser = await GetUserById(userIdParam);
 
       // Create a log for the update
       const log = {
@@ -290,8 +292,8 @@ router.patch("/:userId", hasPermission('canEditAnyUser'), validId('userId'), val
 
     // Issue new JWT token if updating self
     let newToken = null;
-    if (isUpdatingSelf) {
-      newToken = await issueAuthToken({ _id: currentUserId, email: req.auth.email, name: req.auth.name });
+    if (isUpdatingSelf && refreshedUser) {
+      newToken = await issueAuthToken(refreshedUser);
     }
 
     // Construct response

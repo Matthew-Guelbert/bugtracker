@@ -15,7 +15,7 @@ import { commentSchema } from '../../schema/commentSchema.js';
 
 // List all bugs
 router.get('', isLoggedIn(), async (req, res) => {
-  let { keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber } = req.query;
+  let { keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, onlyMine } = req.query;
   const match = {};
   const sortOptions = getSortOptions(sortBy, 'bug');
 
@@ -29,6 +29,26 @@ router.get('', isLoggedIn(), async (req, res) => {
         { createdBy: { $regex: keywords, $options: 'i' } },
         { assignedToUserName: { $regex: keywords, $options: 'i' } }
       ];
+    }
+
+    if (onlyMine === 'true') {
+      const authUserId = String(req.auth._id || '');
+      const authName = req.auth.name || '';
+      const mineFilter = {
+        $or: [
+          { createdBy: authName },
+          { author: authName },
+          { assignedToUserName: authName },
+          { assignedToUserId: authUserId },
+        ]
+      };
+
+      if (match.$or) {
+        match.$and = [{ $or: match.$or }, mineFilter];
+        delete match.$or;
+      } else {
+        match.$or = mineFilter.$or;
+      }
     }
 
     // Classification search
@@ -63,6 +83,70 @@ router.get('', isLoggedIn(), async (req, res) => {
     res.json(bugs);
   } catch (err) {
     console.error(`Error in GET /bugs: ${err.message}`);
+    res.status(500).json({ error: 'Failed to load bugs' });
+  }
+});
+
+// Get bugs authored by or assigned to the logged-in user
+router.get('/my-bugs', isLoggedIn(), hasPermission('canViewData'), async (req, res) => {
+  try {
+    const { keywords, classification, maxAge, minAge, closed, sortBy } = req.query;
+    const db = await connect();
+    const authUserId = String(req.auth._id || '');
+    const authName = req.auth.name || '';
+
+    const match = {
+      $or: [
+        { createdBy: authName },
+        { author: authName },
+        { assignedToUserId: authUserId },
+        { assignedToUserName: authName }
+      ]
+    };
+
+    if (keywords) {
+      match.$and = match.$and || [];
+      match.$and.push({
+        $or: [
+          { title: { $regex: keywords, $options: 'i' } },
+          { description: { $regex: keywords, $options: 'i' } },
+          { stepsToReproduce: { $regex: keywords, $options: 'i' } },
+          { createdBy: { $regex: keywords, $options: 'i' } },
+          { assignedToUserName: { $regex: keywords, $options: 'i' } }
+        ]
+      });
+    }
+
+    if (classification) {
+      match.classification = classification;
+    }
+
+    if (closed !== undefined) {
+      match.closed = closed === 'true';
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const pastMaximumDaysOld = new Date(today);
+    pastMaximumDaysOld.setDate(pastMaximumDaysOld.getDate() - maxAge);
+
+    const pastMinimumDaysOld = new Date(today);
+    pastMinimumDaysOld.setDate(pastMinimumDaysOld.getDate() - minAge);
+
+    if (maxAge && minAge) {
+      match.createdOn = { $lte: pastMinimumDaysOld, $gte: pastMaximumDaysOld };
+    } else if (maxAge) {
+      match.createdOn = { $gte: pastMaximumDaysOld };
+    } else if (minAge) {
+      match.createdOn = { $lte: pastMinimumDaysOld };
+    }
+
+    const sortOptions = getSortOptions(sortBy, 'bug');
+    const bugs = await db.collection('Bugs').find(match).sort(sortOptions).toArray();
+    res.json(bugs);
+  } catch (err) {
+    console.error(`Error in GET /bugs/my-bugs: ${err.message}`);
     res.status(500).json({ error: 'Failed to load bugs' });
   }
 });
@@ -154,7 +238,7 @@ router.patch("/:bugId",
       // Check if user can edit this bug based on permissions
       if (
         canEditAnyBug || 
-        (canEditIfAssignedTo && currentBug.assignedToUserId === auth._id) ||
+        (canEditIfAssignedTo && String(currentBug.assignedToUserId) === String(auth._id)) ||
         (canEditMyBug && currentBug.createdBy === auth.name)
       ) {
         const updateFields = {
@@ -223,7 +307,7 @@ router.put("/:bugId/classify",
       // Check if user has permission to classify the bug
       if (
         canClassifyAnyBug || 
-        (canEditIfAssignedTo && currentBug.assignedToUserId === auth._id) ||
+        (canEditIfAssignedTo && String(currentBug.assignedToUserId) === String(auth._id)) ||
         (canEditMyBug && currentBug.createdBy === auth.name)
       ) {
         const updatedFields = {
@@ -420,29 +504,6 @@ router.post("/:bugId/log-hours", isLoggedIn(), validId('bugId'), validBody(logHo
   } catch (err) {
     console.error(`Error in POST /bugs/${bugId}/log-hours: ${err.message}`);
     return res.status(500).json({ error: 'Error logging hours.' });
-  }
-});
-
-// Get bugs authored by or assigned to the logged-in user
-router.get('/my-bugs', isLoggedIn(), hasPermission('canViewData'), async (req, res) => {
-  try {
-    const db = await connect();
-    const authUserId = String(req.auth._id || '');
-    const authName = req.auth.name || '';
-
-    const bugs = await db.collection('Bugs').find({
-      $or: [
-        { createdBy: authName },
-        { author: authName },
-        { assignedToUserId: authUserId },
-        { assignedToUserName: authName }
-      ]
-    }).sort({ createdOn: -1 }).toArray();
-
-    res.json(bugs);
-  } catch (err) {
-    console.error(`Error in GET /bugs/my-bugs: ${err.message}`);
-    res.status(500).json({ error: 'Failed to load bugs' });
   }
 });
 

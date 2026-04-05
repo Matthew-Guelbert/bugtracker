@@ -14,7 +14,6 @@ const BugList = ({ auth, showError, showSuccess }) => {
   const [maxAge, setMaxAge] = useState('');
   const [minAge, setMinAge] = useState('');
   const [closed, setClosed] = useState(false);
-  const [onlyMine, setOnlyMine] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [pageSize, setPageSize] = useState(10);
   const [pageNumber, setPageNumber] = useState(1);
@@ -47,7 +46,6 @@ const BugList = ({ auth, showError, showSuccess }) => {
           maxAge: maxAge || undefined,
           minAge: minAge || undefined,
           closed,
-          onlyMine,
           sortBy,
           pageSize,
           pageNumber,
@@ -67,7 +65,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
     } finally {
       setLoading(false);
     }
-  }, [auth.token, keywords, classification, maxAge, minAge, closed, onlyMine, sortBy, pageSize, pageNumber, showError]);
+  }, [auth.token, keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, showError]);
 
   // Debounced useEffect for search criteria changes and pagination
   useEffect(() => {
@@ -82,7 +80,7 @@ const BugList = ({ auth, showError, showSuccess }) => {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [keywords, classification, maxAge, minAge, closed, onlyMine, sortBy, pageSize, pageNumber, fetchBugs]);
+  }, [keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, fetchBugs]);
 
 
 
@@ -252,23 +250,6 @@ const BugList = ({ auth, showError, showSuccess }) => {
                     id="closedSwitch"
                   />
                   <label className="form-check-label" htmlFor="closedSwitch"></label>
-                </div>
-              </div>
-              <div className="mb-3">
-                <label className="form-label fw-semibold">Only My Queue</label>
-                <div className="form-check form-switch mt-1">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    name="onlyMine"
-                    checked={onlyMine}
-                    onChange={(e) => {
-                      setOnlyMine(e.target.checked);
-                      setPageNumber(1);
-                    }}
-                    id="onlyMineSwitch"
-                  />
-                  <label className="form-check-label" htmlFor="onlyMineSwitch"></label>
                 </div>
               </div>
               <div className="mb-3">

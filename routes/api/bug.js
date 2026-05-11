@@ -1,6 +1,6 @@
 import express from 'express';
 import { ObjectId } from 'mongodb';
-import { GetAllBugs, GetBugById, AddBug, UpdateBug, ClassifyBug, AssignBug, CloseBug, GetAllComments, GetCommentById, AddComment, saveAuditLog, getSortOptions, connect } from '../../database.js';
+import { GetAllBugs, GetBugById, AddBug, UpdateBug, ClassifyBug, AssignBug, CloseBug, saveAuditLog, getSortOptions, connect } from '../../database.js';
 import debug from 'debug';
 import { validId } from '../../middleware/validId.js';
 import { validBody } from '../../middleware/validBody.js';

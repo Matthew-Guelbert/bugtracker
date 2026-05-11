@@ -285,7 +285,7 @@ async function AddBug(bug) {
   }
 };
 
-//FIXME: Refactor to add comments to existing bugs
+
 async function UpdateBug(bugId, update) {
   const db = await connect();
 
@@ -356,52 +356,9 @@ async function CloseBug(bugId, updatedFields) {
   }
 };
 
-// Comment functions
-async function GetAllComments(){
-  debugDb('GetAllComments');
-  const db = await connect();
-  try{
-    const comments = await db.collection("Comments").find({}).toArray();
-    debugDb(`Fetched ${comments.length} comments`);
-    return comments;
-  }catch(error){
-    console.error(`Error in GetAllComments: ${error.message}`);
-    throw new Error('Error retrieving comments');
-  }
-};
-
-async function GetCommentById(id){
-  debugDb('GetCommentById');
-  const db = await connect();
-
-  try{
-    if (!ObjectId.isValid(id)){
-      return null;
-    }
-
-    const comment = await db.collection("Comments").findOne({ _id: new ObjectId(id) });
-    debugDb(`Fetched comment: ${JSON.stringify(comment)}`);
-    return comment;
-  }catch(error){
-    console.error(`Error in GetCommentById: ${error.message}`);
-    throw new Error('Error retrieving comment');
-  }
-};
-
-//FIXME: Refactor for inserting new comments to an existing bug, or disable this function
-async function AddComment(comment){
-  debugDb('AddComment');
-  const db = await connect();
-
-  try{
-    const dbResult = await db.collection("Comments").insertOne(comment);
-    debugDb(`Comment added with ID: ${dbResult.insertedId}`);
-    return dbResult;
-  }catch(error){
-    console.error(`Error in AddComment: ${error.message}`);
-    throw new Error('Error adding comment');
-  }
-};
+// Comments are stored embedded on the bug document in the `Bugs` collection.
+// The API uses UpdateBug to push new comments into the bug's comments array.
+// Standalone comment collection helpers were removed to avoid duplication.
 
 // Test Case functions
 async function GetAllTests() {
@@ -553,7 +510,6 @@ async function findRoleByName(roleName){
 /** export functions */
 export { newId, connect, ping, GetAllUsers, GetUserById, GetUserByEmail, RegisterUser, LoginUser, UpdateUser, DeleteUser, 
          GetAllBugs, GetBugById, AddBug, UpdateBug, ClassifyBug, AssignBug, CloseBug, 
-         GetAllComments, GetCommentById, AddComment, 
          GetAllTests, GetTestById, AddTest, UpdateTest, DeleteTest, 
          getSortOptions, saveAuditLog, hashPassword, findRoleByName }; 
 

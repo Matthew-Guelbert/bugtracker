@@ -5,7 +5,7 @@ import Joi from 'joi';
 import { validId } from '../../middleware/validId.js';
 import { validBody } from '../../middleware/validBody.js';
 import { isLoggedIn, hasPermission } from '@merlin4/express-auth';
-import { GetBugById, AddComment, GetAllComments, GetCommentById, connect, UpdateBug } from '../../database.js';
+import { GetBugById, connect, UpdateBug } from '../../database.js';
 
 const router = express.Router();
 const debugComment = debug('app:CommentRouter');

@@ -1,75 +1,82 @@
-MERN Bug Tracker <br>
-A full-stack bug tracking application built using the MERN stack (MongoDB, Express, React, Node.js). This project is designed to help teams log, track, and manage software issues throughout the development lifecycle.
+# Bug Tracker
 
-Features:
+A full-stack bug tracking application built with the MERN stack (MongoDB, Express, React, Node.js). The application provides teams with a centralized platform to log, track, assign, and manage software issues throughout the development lifecycle.
 
-User authentication (JWT-based)
+## Features
 
-Create, update, and resolve bug reports
+- JWT-based user authentication with role-based access control
+- Create, update, and resolve bug reports
+- Assign bugs to users and track assignment history
+- Filter bugs by status, priority, and assigned user
+- Log work hours on bugs for time tracking
+- Add test cases and comments to bugs for collaboration
+- User management with configurable permissions
 
-Assign bugs to users
+## Tech Stack
 
-Filter bugs by status, priority, and assigned user
+- **Frontend**: React with Vite
+- **Backend**: Node.js with Express
+- **Database**: MongoDB
+- **Authentication**: JWT with @merlin4/express-auth
+- **Validation**: Joi
+- **Security**: Bcrypt for password hashing
 
-Dashboard overview (planned)
+## Installation
 
-Clean UI built with Vite + React (UI revamp in progress)
+### Prerequisites
 
-Modular, maintainable API design
+- Node.js (v14 or higher)
+- MongoDB running locally or a MongoDB Atlas connection string
 
-Getting Started:
+### Setup
 
-1. Clone the repo:
+1. Clone the repository:
+```bash
 git clone https://github.com/Matthew-Guelbert/bugtracker.git
 cd bugtracker
+```
 
-2. Install backend dependencies:
+2. Install dependencies:
+```bash
 npm install
+```
 
 3. Configure environment variables:
-Create a .env file in the root directory with the following:
+
+Create a `.env` file in the root directory with the following variables:
+```
 PORT=5000
-MONGO_URI=your_mongodb_connection_string
+DB_URL=your_mongodb_connection_string
+DB_NAME=bugtracker
 JWT_SECRET=your_jwt_secret
+```
 
-4. Run the backend server:
+4. Start the backend server:
+```bash
 npm run start-dev
+```
 
-5. Set up frontend (React + Vite):
+5. In a new terminal, start the frontend:
+```bash
 cd frontend
 npm install
 npm run dev
+```
 
-Project Structure:
+The application will be available at `http://localhost:5173` (frontend) and the API will run on `http://localhost:5000`.
 
-/frontend - React + Vite frontend <br>
-/middleware - Express middleware (auth, error handlers) <br>
-/routes - API route definitions <br>
-/schema - MongoDB models or schema logic <br>
-database.js - MongoDB connection logic <br>
-index.js - Express app entry point <br>
-.env - Environment config <br>
-.gitignore <br>
-LICENSE <br>
-README.md
+## Project Structure
 
-Tech Stack:
+```
+/frontend          - React + Vite frontend application
+/middleware        - Express middleware for authentication and validation
+/routes            - API route definitions
+/schema            - Joi validation schemas
+database.js        - MongoDB connection and database operations
+index.js           - Express application entry point
+```
 
-Frontend: React + Vite
+## License
 
-Backend: Node.js + Express
-
-Database: MongoDB (native driver or Mongoose)
-
-Authentication: JWT-based using @merlin4/express-auth
-
-Other Tools: Joi, Bcrypt, Dotenv, Nodemon, Debug
-
-License:
 This project is licensed under the MIT License.
-
-Author:
-Matthew Guelbert <br>
-Portfolio: https://matthew-guelbert.github.io/ <br>
-GitHub: https://github.com/Matthew-Guelbert
 

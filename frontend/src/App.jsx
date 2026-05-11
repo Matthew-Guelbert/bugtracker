@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { isTokenExpired } from './utils/auth';
+
+// Configure axios base URL from environment
+axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

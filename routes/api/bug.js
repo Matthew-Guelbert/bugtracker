@@ -352,6 +352,7 @@ router.put("/:bugId/classify",
 //FIXME: Can we do multiple user assignments to one bug?
 router.patch("/:bugId/assign", 
   isLoggedIn(), 
+  hasPermission('canReassignAnyBug'),
   validId('bugId'), 
   validBody(assignBugSchema),
   async (req, res) => {
@@ -412,7 +413,7 @@ router.patch("/:bugId/assign",
 
 
 // Close a bug
-router.patch("/:bugId/close", isLoggedIn(), validId('bugId'), validBody(closeBugSchema), async (req, res) => {
+router.patch("/:bugId/close", isLoggedIn(), hasPermission('canCloseAnyBug'), validId('bugId'), validBody(closeBugSchema), async (req, res) => {
   const bugId = req.bugId;
   const { closed } = req.body;
   const auth = req.auth;
@@ -425,7 +426,7 @@ router.patch("/:bugId/close", isLoggedIn(), validId('bugId'), validBody(closeBug
       return res.status(404).json({ error: `Bug ${bugId} not found.` });
     }
 
-    const closedStatus = closed === 'true'; // Convert string to boolean
+    const closedStatus = closed;
     const updatedFields = {
       closed: closedStatus,
       closedOn: closedStatus ? new Date() : null, // Set date if closed, otherwise null
@@ -464,7 +465,7 @@ router.patch("/:bugId/close", isLoggedIn(), validId('bugId'), validBody(closeBug
 });
 
 // Log hours for a bug
-router.post("/:bugId/log-hours", isLoggedIn(), validId('bugId'), validBody(logHoursSchema), async (req, res) => {
+router.post("/:bugId/log-hours", isLoggedIn(), hasPermission('canLogHours'), validId('bugId'), validBody(logHoursSchema), async (req, res) => {
   const bugId = req.bugId;
   const { hours, version, dateFixed, notes } = req.body;
   const auth = req.auth;

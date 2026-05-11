@@ -39,14 +39,25 @@ router.get('/:bugId/tests', isLoggedIn(), validId('bugId'), async (req, res) => 
 });
 
 // Get a single test by ID
-router.get('/:bugId/tests/:testId', isLoggedIn(), validId('testId'), async (req, res) => {
+router.get('/:bugId/tests/:testId', isLoggedIn(), validId('bugId'), validId('testId'), async (req, res) => {
+  const bugId = req.bugId;
   const testId = req.testId;
 
   try {
+    const bug = await GetBugById(bugId);
+    if (!bug) {
+      return res.status(404).json({ error: `Bug ${bugId} not found.` });
+    }
+
     const test = await GetTestById(testId);
     if (!test) {
       return res.status(404).json({ error: `Test ${testId} not found.` });
     }
+
+    if (test.bugId.toString() !== bugId.toString()) {
+      return res.status(404).json({ error: `Test ${testId} does not belong to bug ${bugId}.` });
+    }
+
     return res.status(200).json(test);
   } catch (error) {
     console.error(error);

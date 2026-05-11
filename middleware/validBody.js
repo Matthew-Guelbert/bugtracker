@@ -10,7 +10,9 @@ export const validBody = (schema) => {
         path: err.path,  // Show specific path Joi flagged
         type: err.type,  // Show error type (optional but useful for debugging)
       }));
-      console.error("Joi validation errors:", messages);  // Detailed error logging
+      if (process.env.NODE_ENV !== 'test') {
+        console.error('Joi validation errors:', messages);  // Detailed error logging
+      }
       return res.status(400).json({ error: messages });
     }
     next();

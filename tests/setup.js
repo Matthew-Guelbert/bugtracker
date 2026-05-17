@@ -15,8 +15,6 @@ beforeAll(async () => {
   process.env.MONGODB_CONNECTION_STRING = mongoUri; // Backup env var
   process.env.JWT_SECRET = 'test_secret_key_for_testing_only';
   process.env.NODE_ENV = 'test';
-  
-  console.log('✅ Test environment configured with DB:', mongoUri);
 });
 
 afterAll(async () => {

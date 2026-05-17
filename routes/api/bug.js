@@ -13,6 +13,28 @@ import Joi from 'joi';
 import { bugSchema, bugIdSchema, bugUpdateSchema, classifyBugSchema, assignBugSchema, closeBugSchema, logHoursSchema } from '../../schema/bugSchema.js';
 import { commentSchema } from '../../schema/commentSchema.js';
 
+/**
+ * Helper: Determine if a user can edit a specific bug based on their permissions and relationship to the bug.
+ * Returns true if user has permission to edit this bug, false otherwise.
+ */
+function canUserEditBug(user, bug) {
+  const permissions = user.permissions || {};
+  const canEditAnyBug = permissions.canEditAnyBug || false;
+  const canEditIfAssignedTo = permissions.canEditIfAssignedTo || false;
+  const canEditMyBug = permissions.canEditMyBug || false;
+
+  // User can edit if they have canEditAnyBug (unrestricted)
+  if (canEditAnyBug) return true;
+
+  // User can edit if they have canEditIfAssignedTo AND the bug is assigned to them
+  if (canEditIfAssignedTo && String(bug.assignedToUserId) === String(user._id)) return true;
+
+  // User can edit if they have canEditMyBug AND they created the bug
+  if (canEditMyBug && bug.createdBy === user.name) return true;
+
+  return false;
+}
+
 // List all bugs
 router.get('', isLoggedIn(), async (req, res) => {
   let { keywords, classification, maxAge, minAge, closed, sortBy, pageSize, pageNumber, onlyMine } = req.query;
@@ -204,18 +226,14 @@ router.post('', hasPermission('canCreateBug'), validBody(bugSchema), async (req,
   }
 });
 
-//FIXME: not happy with this route, need to refactor, too much logic to make hasPermission work
 // Update a bug
 router.patch("/:bugId",
   isLoggedIn(),
   validId('bugId'),
   validBody(bugUpdateSchema),
-  hasPermission('canEditAnyBug', 'canEditIfAssignedTo', 'canEditMyBug'),  // Ensure user has permission
   async (req, res) => {
     const bugId = req.bugId;
     const auth = req.auth;
-
-    debugBug(`auth object: ${JSON.stringify(auth)}`);
 
     try {
       // Fetch the current bug
@@ -224,51 +242,36 @@ router.patch("/:bugId",
         return res.status(404).json({ error: `Bug ${bugId} not found.` });
       }
 
-      // Get permissions from auth
-      const permissions = auth.permissions || {};
-      const canEditAnyBug = permissions.canEditAnyBug || false;
-      const canEditIfAssignedTo = permissions.canEditIfAssignedTo || false;
-      const canEditMyBug = permissions.canEditMyBug || false;
-
-      // Log permissions to debug
-      debugBug(`Can edit any bug: ${canEditAnyBug}`);
-      debugBug(`Can edit if assigned: ${canEditIfAssignedTo}`);
-      debugBug(`Can edit my bug: ${canEditMyBug}`);
-
-      // Check if user can edit this bug based on permissions
-      if (
-        canEditAnyBug || 
-        (canEditIfAssignedTo && String(currentBug.assignedToUserId) === String(auth._id)) ||
-        (canEditMyBug && currentBug.createdBy === auth.name)
-      ) {
-        const updateFields = {
-          title: req.body.title || currentBug.title,
-          description: req.body.description || currentBug.description,
-          stepsToReproduce: req.body.stepsToReproduce || currentBug.stepsToReproduce,
-          lastUpdatedBy: auth._id,  // Set only the ID of the user
-          lastUpdatedOn: new Date()
-        };
-
-        // Perform the update
-        const updateResult = await UpdateBug(bugId, { $set: updateFields });
-        if (updateResult.modifiedCount === 1) {
-          await saveAuditLog({
-            timestamp: new Date(),
-            collection: "bug",
-            operation: "update",
-            target: { bugId },
-            update: updateFields,
-            auth: auth,
-          });
-          return res.status(200).json({ message: `Bug ${bugId} updated successfully.` });
-        } else {
-          return res.status(500).json({ error: `An error occurred while updating bug ${bugId}.` });
-        }
-      } else {
+      // Check if user has permission to edit this bug
+      if (!canUserEditBug(auth, currentBug)) {
         return res.status(403).json({ error: 'You do not have permission to edit this bug.' });
       }
+
+      const updateFields = {
+        title: req.body.title || currentBug.title,
+        description: req.body.description || currentBug.description,
+        stepsToReproduce: req.body.stepsToReproduce || currentBug.stepsToReproduce,
+        lastUpdatedBy: auth._id,
+        lastUpdatedOn: new Date()
+      };
+
+      // Perform the update
+      const updateResult = await UpdateBug(bugId, { $set: updateFields });
+      if (updateResult.modifiedCount === 1) {
+        await saveAuditLog({
+          timestamp: new Date(),
+          collection: "bug",
+          operation: "update",
+          target: { bugId },
+          update: updateFields,
+          auth: auth,
+        });
+        return res.status(200).json({ message: `Bug ${bugId} updated successfully.` });
+      } else {
+        return res.status(500).json({ error: `An error occurred while updating bug ${bugId}.` });
+      }
     } catch (err) {
-      console.error(`Error in PATCH /bugs/${bugId}: ${err.message}`);
+      debugBug(`Error in PATCH /bugs/${bugId}: ${err.message}`);
       res.status(500).json({ error: 'Error updating bug' });
     }
   }
@@ -418,8 +421,6 @@ router.patch("/:bugId/close", isLoggedIn(), hasPermission('canCloseAnyBug'), val
   const { closed } = req.body;
   const auth = req.auth;
 
-  debugBug(`Bug ID: ${bugId} being closed requested by ${auth}.`);
-
   try{
     const currentBug = await GetBugById(bugId);
     if (!currentBug) {
@@ -429,12 +430,10 @@ router.patch("/:bugId/close", isLoggedIn(), hasPermission('canCloseAnyBug'), val
     const closedStatus = closed;
     const updatedFields = {
       closed: closedStatus,
-      closedOn: closedStatus ? new Date() : null, // Set date if closed, otherwise null
+      closedOn: closedStatus ? new Date() : null,
       closedBy: closedStatus ? auth : null,
       lastUpdated: new Date()
     };
-
-    debugBug('Updated fields: ' + JSON.stringify(updatedFields));
 
     const result = await CloseBug(bugId, updatedFields);
 
@@ -450,16 +449,12 @@ router.patch("/:bugId/close", isLoggedIn(), hasPermission('canCloseAnyBug'), val
       await saveAuditLog(log);
 
       const action = closedStatus ? "closed" : "reopened";
-      debugBug(`Bug ${bugId} ${action} successfully.`);
-
       return res.status(200).json({ message: `Bug ${bugId} ${action} successfully.` });
     }else{
-      debugBug(`Error closing bug ${bugId}.`);
       return res.status(500).json({ error: `An error occurred while closing bug ${bugId}. No changes made.` });
     }
   }catch(err){
-    debugBug('Error closing bug:', err);
-    console.error('Error closing bug:', err);
+    debugBug(`Error closing bug ${bugId}: ${err.message}`);
     return res.status(500).json({ error: 'An error occurred while closing the bug.' });
   }
 });

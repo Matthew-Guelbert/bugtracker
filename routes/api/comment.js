@@ -34,7 +34,7 @@ router.get('/:bugId/comments', isLoggedIn(), validId('bugId'), async (req, res) 
 
     return res.status(200).json(sortedComments);
   }catch(err){
-    console.error(err);
+    debugComment(`Error fetching comments for bug ${bugId}: ${err.message}`);
     return res.status(500).json({ error: 'Error fetching comments.' });
   }
 });
@@ -58,7 +58,7 @@ router.get('/:bugId/comments/:commentId', isLoggedIn(), validId('bugId'), validI
 
     return res.status(200).json(comment);
   } catch (err) {
-    console.error(err);
+    debugComment(`Error fetching comment ${commentId}: ${err.message}`);
     return res.status(500).json({ error: 'Error fetching comment.' });
   }
 });
@@ -88,7 +88,7 @@ router.post('/:bugId/comments', isLoggedIn(), validId('bugId'), validBody(commen
       return res.status(500).json({ error: 'Error adding comment.' });
     }
   } catch (err) {
-    console.error(`Error in POST /:bugId/comments: ${err.message}`);
+    debugComment(`Error adding comment to bug ${bugId}: ${err.message}`);
     return res.status(500).json({ error: 'Error adding comment.' });
   }
 });

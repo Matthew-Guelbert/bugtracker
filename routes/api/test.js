@@ -33,7 +33,7 @@ router.get('/:bugId/tests', isLoggedIn(), validId('bugId'), async (req, res) => 
 
     return res.status(200).json(bugTests);
   } catch (error) {
-    console.error(error);
+    debugTest(`Error fetching tests for bug ${bugId}: ${error.message}`);
     return res.status(500).json({ error: 'Error fetching tests.' });
   }
 });
@@ -103,7 +103,7 @@ router.post('/:bugId/tests', hasPermission('canAddTestCase'), validId('bugId'), 
       return res.status(500).json({ error: 'Error adding test.' });
     }
   } catch (error) {
-    console.error(error);
+    debugTest(`Error adding test to bug ${bugId}: ${error.message}`);
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });
@@ -139,7 +139,7 @@ router.patch('/:bugId/tests/:testId', hasPermission('canEditTestCase'), validId(
       return res.status(500).json({ error: 'Error updating test.' });
     }
   } catch (error) {
-    console.error(error);
+    debugTest(`Error updating test ${testId}: ${error.message}`);
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });
@@ -172,7 +172,7 @@ router.delete('/:bugId/tests/:testId', hasPermission('canDeleteTestCase'), valid
       return res.status(200).json({ message: `Test ${testId} deleted!`, testId: testId });
     }
   } catch (error) {
-    console.error(error);
+    debugTest(`Error deleting test ${testId}: ${error.message}`);
     return res.status(500).json({ error: 'Internal server error.' });
   }
 });

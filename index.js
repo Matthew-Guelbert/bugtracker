@@ -13,6 +13,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const app = express();
+
+// When running behind a proxy (e.g., Render, Vercel reverse proxy), trust the first proxy
+// so that secure cookies and protocol-dependent behavior work correctly.
+app.set('trust proxy', 1);
 const port = process.env.PORT || 3000;
 
 const allowedOrigins = process.env.CORS_ORIGINS

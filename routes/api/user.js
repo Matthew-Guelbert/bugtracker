@@ -265,6 +265,9 @@ router.patch("/:userId", hasPermission('canEditAnyUser'), validId('userId'), val
     if (req.body.familyName !== undefined && req.body.familyName !== '') updates.familyName = req.body.familyName;
     if (req.body.role !== undefined && req.body.role !== '') updates.role = req.body.role;
 
+    // Keep refreshed user in outer scope for token re-issue logic.
+    let refreshedUser = null;
+
     // Add metadata fields if there are updates
     if (Object.keys(updates).length > 0) {
       updates.lastUpdatedOn = new Date();
@@ -272,7 +275,7 @@ router.patch("/:userId", hasPermission('canEditAnyUser'), validId('userId'), val
 
       // Update the user in the database
       await UpdateUser({ ...user, ...updates });
-      const refreshedUser = await GetUserById(userIdParam);
+      refreshedUser = await GetUserById(userIdParam);
 
       // Create a log for the update
       const log = {

@@ -72,6 +72,78 @@ describe('Basic API Tests', () => {
       .expect(400);  // Should return 400 Bad Request
   });
 
+  test('should allow self user update with unchanged values', async () => {
+    const newUser = createUserData();
+
+    const registerResponse = await request(app)
+      .post('/api/users/register')
+      .send(newUser)
+      .expect(201);
+
+    const registeredPayload = jwt.decode(registerResponse.body.token);
+    const userId = registeredPayload._id;
+
+    const selfEditToken = createAuthToken({
+      id: userId,
+      name: `${newUser.givenName} ${newUser.familyName}`,
+      role: ['Admin'],
+      permissions: { canEditAnyUser: true },
+    });
+
+    const authHeader = { Authorization: `Bearer ${selfEditToken}` };
+
+    const userResponse = await request(app)
+      .get(`/api/users/${userId}`)
+      .set(authHeader)
+      .expect(200);
+
+    const unchangedPayload = {
+      email: userResponse.body.email,
+      givenName: userResponse.body.givenName,
+      familyName: userResponse.body.familyName,
+      role: Array.isArray(userResponse.body.role) ? userResponse.body.role[0] : userResponse.body.role,
+    };
+
+    await request(app)
+      .patch(`/api/users/${userId}`)
+      .set(authHeader)
+      .send(unchangedPayload)
+      .expect(200)
+      .expect((response) => {
+        expect(response.body.message).toBe('User updated successfully');
+        expect(response.body.userId).toBe(userId);
+        expect(response.body.authToken).toBeDefined();
+      });
+  });
+
+  test('should reject user update with empty payload', async () => {
+    const newUser = createUserData();
+
+    const registerResponse = await request(app)
+      .post('/api/users/register')
+      .send(newUser)
+      .expect(201);
+
+    const registeredPayload = jwt.decode(registerResponse.body.token);
+    const userId = registeredPayload._id;
+
+    const selfEditToken = createAuthToken({
+      id: userId,
+      name: `${newUser.givenName} ${newUser.familyName}`,
+      role: ['Admin'],
+      permissions: { canEditAnyUser: true },
+    });
+
+    await request(app)
+      .patch(`/api/users/${userId}`)
+      .set({ Authorization: `Bearer ${selfEditToken}` })
+      .send({})
+      .expect(400)
+      .expect((response) => {
+        expect(response.body.message).toBe('No fields to update');
+      });
+  });
+
   test('should close and reopen a bug using boolean payloads', async () => {
     const token = createAuthToken();
     const authHeader = { Authorization: `Bearer ${token}` };
